@@ -1,0 +1,33 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.26730.12
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{111E0B0D-A944-43EF-BBC7-B62FBC635CF6}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ParticleEditor", "ParticleEditor\ParticleEditor.vcxproj", "{DEE3F507-022D-4823-B2D9-E25413E4AAEC}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{DEE3F507-022D-4823-B2D9-E25413E4AAEC}.Debug|x64.ActiveCfg = Debug|x64
+		{DEE3F507-022D-4823-B2D9-E25413E4AAEC}.Debug|x64.Build.0 = Debug|x64
+		{DEE3F507-022D-4823-B2D9-E25413E4AAEC}.Debug|x86.ActiveCfg = Debug|Win32
+		{DEE3F507-022D-4823-B2D9-E25413E4AAEC}.Debug|x86.Build.0 = Debug|Win32
+		{DEE3F507-022D-4823-B2D9-E25413E4AAEC}.Release|x64.ActiveCfg = Release|x64
+		{DEE3F507-022D-4823-B2D9-E25413E4AAEC}.Release|x64.Build.0 = Release|x64
+		{DEE3F507-022D-4823-B2D9-E25413E4AAEC}.Release|x86.ActiveCfg = Release|Win32
+		{DEE3F507-022D-4823-B2D9-E25413E4AAEC}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {BF14FCCE-8CC8-4E02-8FA7-4C0A61685A59}
+	EndGlobalSection
+EndGlobal
