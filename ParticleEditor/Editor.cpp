@@ -119,6 +119,15 @@ ID3D11ShaderResourceView *distortSRV;
 ID3D11RenderTargetView *hdr_rtv;
 ID3D11ShaderResourceView *hdr_srv;
 
+
+// TEMP:
+ID3D11VertexShader   *trail_vs;
+ID3D11GeometryShader *trail_gs;
+ID3D11PixelShader    *trail_ps;
+ID3D11Buffer *trail_buffer;
+ID3D11InputLayout *trail_layout;
+
+
 inline float RandomFloat(float lo, float hi)
 {
 	return ((hi - lo) * ((float)rand() / RAND_MAX)) + lo;
@@ -374,9 +383,47 @@ void InitPlane()
 	DXCALL(gDevice->CreateRenderTargetView(tex, &rdesc, &default_rtv));
 }
 
+struct TrailParticle {
+	SimpleMath::Vector3 position;
+	SimpleMath::Vector2 size;
+};
+
+
+#define TRAIL_COUNT 32
+TrailParticle particles[TRAIL_COUNT];
+
 void InitParticles()
 {
 	FX = new ParticleSystem(nullptr, 4096, EWIDTH, EHEIGHT, gDevice, gDeviceContext);
+
+
+
+	D3D11_BUFFER_DESC desc;
+	ZeroMemory(&desc, sizeof(D3D11_BUFFER_DESC));
+	desc.Usage = D3D11_USAGE_DYNAMIC;
+	desc.ByteWidth = (UINT)(sizeof(TrailParticle) * TRAIL_COUNT * 4);
+	desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	desc.MiscFlags = 0;
+	desc.StructureByteStride = 0;
+
+	DXCALL(gDevice->CreateBuffer(&desc, nullptr, &trail_buffer));
+
+	ID3DBlob *blob = compile_shader(L"Resources/TrailParticleSimple.hlsl", "VS", "vs_5_0", gDevice);
+	DXCALL(gDevice->CreateVertexShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, &trail_vs));
+
+	D3D11_INPUT_ELEMENT_DESC input_desc[] = {
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "SIZE", 0, DXGI_FORMAT_R32G32_FLOAT,        0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+	};
+	trail_layout = create_input_layout(input_desc, ARRAYSIZE(input_desc), blob, gDevice);
+
+	blob = compile_shader(L"Resources/TrailParticleSimple.hlsl", "GS", "gs_5_0", gDevice);
+	DXCALL(gDevice->CreateGeometryShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, &trail_gs));
+
+	blob = compile_shader(L"Resources/TrailParticleSimple.hlsl", "PS", "ps_5_0", gDevice);
+	DXCALL(gDevice->CreatePixelShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, &trail_ps));
+
 }
 
 void InitComposite()
@@ -496,73 +543,6 @@ void InitComposite()
 
 }
 
-void RenderShadow()
-{
-	/*dirLight light;
-	light.lightColor = { 0.9f, 0.9f, 0.9f, 1.0f };
-	light.lightDirection = { directionalLightPos.x, directionalLightPos.y, directionalLightPos.z, 1 };
-	D3D11_MAPPED_SUBRESOURCE dddata;
-	DXCALL(gDeviceContext->Map(dLightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &dddata));
-	{
-		CopyMemory(dddata.pData, &light, sizeof(dirLight));
-	}
-	gDeviceContext->Unmap(dLightBuffer, 0);
-
-
-	gDeviceContext->ClearDepthStencilView(ShadowMap, D3D11_CLEAR_DEPTH, 1.0f, 0);
-
-	SetViewport(2048, 2048);
-
-	shadow_camera.proj = XMMatrixOrthographicLH(33.f, 33.f, shadowznear, 20);
-	XMMATRIX view = XMMatrixLookAtLH(XMLoadFloat3(&directionalLightPos), { 0, 0, 0 }, { 0, 1, 0 });
-	shadow_camera.view = view;
-
-	D3D11_MAPPED_SUBRESOURCE ddata;
-	DXCALL(gDeviceContext->Map(shadow_wvp_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &ddata));
-	{
-		CopyMemory(ddata.pData, &shadow_camera, sizeof(Camera::BufferVals));
-	}
-	gDeviceContext->Unmap(shadow_wvp_buffer, 0);
-
-	FX->renderShadows(shadow_wvp_buffer, camera->wvp_buffer, ShadowMap, DepthStateReadWrite);
-	gDeviceContext->RSSetState(DefaultRaster);
-
-	{
-		UINT32 stride = sizeof(float) * 3;
-		UINT32 offset = 0u;
-
-		gDeviceContext->IASetInputLayout(plane_layout);
-		gDeviceContext->IASetVertexBuffers(0, 1, &plane_vertex_buffer, &stride, &offset);
-		gDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-		gDeviceContext->VSSetShader(plane_vs, nullptr, 0);
-		gDeviceContext->VSSetConstantBuffers(0, 1, &camera->wvp_buffer);
-		gDeviceContext->PSSetShader(nullptr, nullptr, 0);
-		ID3D11ShaderResourceView *reset[5] = { nullptr, nullptr, nullptr, nullptr, nullptr };
-		gDeviceContext->PSSetShaderResources(0, 5, reset);
-
-
-		gDeviceContext->OMSetRenderTargets(0, nullptr, ShadowMap);
-
-		gDeviceContext->Draw(6, 0);
-		gDeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
-
-	}
-
-	shadow_camera.world = XMMatrixIdentity();
-
-	D3D11_MAPPED_SUBRESOURCE data;
-	DXCALL(gDeviceContext->Map(shadow_wvp_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &data));
-	{
-		CopyMemory(data.pData, &shadow_camera, sizeof(Camera::BufferVals));
-	}
-	gDeviceContext->Unmap(shadow_wvp_buffer, 0);
-
-
-	SetViewport(EWIDTH, EHEIGHT);
-	gDeviceContext->RSSetState(DefaultRaster);*/
-}
-
 void RenderPlane()
 {
 	UINT32 stride = sizeof(float) * 3;
@@ -633,7 +613,25 @@ void RenderParticles()
 		gDeviceContext->RSSetState(DefaultRaster);
 
 	FX->render(reinterpret_cast<Camera*>(camera), default_rtv, default_srv, distort_rtv, hdr_rtv, gDepthbufferDSV, DepthStateRead, debug);
+	if (debug)
+		gDeviceContext->RSSetState(DebugRaster);
+	else
+		gDeviceContext->RSSetState(DefaultRaster);
+	UINT stride = sizeof(TrailParticle);
+	UINT offset = 0;// 1 * sizeof(TrailParticle);
+
+	gDeviceContext->IASetVertexBuffers(0, 1, &trail_buffer, &stride, &offset);
+	gDeviceContext->IASetInputLayout(trail_layout);
+	gDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP_ADJ);
+	gDeviceContext->VSSetShader(trail_vs, nullptr, 0);
+	gDeviceContext->GSSetShader(trail_gs, nullptr, 0);
+	gDeviceContext->PSSetShader(trail_ps, nullptr, 0);
+	gDeviceContext->OMSetRenderTargets(1, &hdr_rtv, nullptr);
+	gDeviceContext->Draw(TRAIL_COUNT, 0);
 	
+	gDeviceContext->GSSetShader(nullptr, nullptr, 0);
+	gDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
 	gDeviceContext->RSSetState(DefaultRaster);
 
 	RenderMips();
@@ -1224,6 +1222,7 @@ void Init()
 	InitComposite();
 }
 
+float a = 0;
 void Update(float dt)
 {
 	if (!settings.ParticlePaused) {
@@ -1302,7 +1301,38 @@ void Update(float dt)
 	camera->update(dt, viewport.Width, viewport.Height);
 	if (!settings.ParticlePaused)
 		FX->update(reinterpret_cast<Camera*>(camera), pdt);
+	a += dt;
+	if (a >= 0.015) {
+		a -=0.015;
+		for (int i = TRAIL_COUNT - 2; i > 1; i--) {
+			//particles[i - 1].position = SimpleMath::Vector3::Lerp(particles[i].position, particles[i - 1].position, 0.9f);
+			particles[i] = particles[i - 1];
+		}
+		particles[1] = {
+			SimpleMath::Vector3(sin(-time *6)*2, 0.5, cos(-time *6)*2),
+			SimpleMath::Vector2(0.3, 1.0)
+		};
+		particles[0] = particles[1];
+		particles[TRAIL_COUNT - 1] = particles[TRAIL_COUNT - 2];
+	}
 
+	for (int i = 1; i < TRAIL_COUNT - 1; i++) {
+		particles[i].position += SimpleMath::Vector3(0, 1 * dt, 0);
+		particles[i].size = SimpleMath::Vector2(0.1, 1.0);
+	}
+
+	D3D11_MAPPED_SUBRESOURCE data = {};
+	gDeviceContext->Map(trail_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &data);
+	{
+		TrailParticle *particle = (TrailParticle *)data.pData;
+		for (int i = 1; i < TRAIL_COUNT - 1; i++) {
+			particle[i] = particles[i];
+		}
+
+		particle[0] = particle[1];
+		particle[TRAIL_COUNT - 1] = particle[TRAIL_COUNT - 2];
+	}
+	gDeviceContext->Unmap(trail_buffer, 0);
 }
 
 void Render(float dt)
@@ -1327,7 +1357,6 @@ void Render(float dt)
 	if (viewport_render) {
 		SetViewport();
 
-		RenderShadow();
 		RenderPlane();
 		RenderParticles();
 		gDeviceContext->RSSetViewports(1, &vp);

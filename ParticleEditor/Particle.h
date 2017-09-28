@@ -6,6 +6,9 @@
 
 #include <DirectXMath.h>
 #include "Ease.h"
+#include <d3d11.h>
+#include <SimpleMath.h>
+
 
 using namespace DirectX;
 
