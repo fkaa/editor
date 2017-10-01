@@ -7,8 +7,6 @@
 
 #include "dxerr.h"
 
-#include "../Globals.h"
-
 // Hjälpfunktion för att kompilera shaders, t.ex:
 //
 //   ID3D11VertexShader *vertexShader = nullptr;
@@ -57,10 +55,10 @@ ID3DBlob *compile_shader(const wchar_t *filename, const char *function, const ch
 //	 };
 //   create_input_layout(desc, ARRAYSIZE(desc), blob, &inputLayout);
 //
-ID3D11InputLayout *create_input_layout(D3D11_INPUT_ELEMENT_DESC *elements, size_t size, ID3DBlob *blob, ID3D11Device *gDevice)
+ID3D11InputLayout *create_input_layout(const D3D11_INPUT_ELEMENT_DESC *elements, size_t size, void const* bytecode, size_t len, ID3D11Device *gDevice)
 {
 	ID3D11InputLayout *layout = nullptr;
-	DXCALL(gDevice->CreateInputLayout(elements, (UINT)size, blob->GetBufferPointer(), (UINT)blob->GetBufferSize(), &layout));
+	DXCALL(gDevice->CreateInputLayout(elements, (UINT)size, bytecode, len, &layout));
 
 	return layout;
 }
@@ -73,4 +71,53 @@ XMFLOAT4 normalize_color(int32_t color)
 		((color & 0xff00) >> 8) / 255.f,
 		(color & 0xff) / 255.f
 	);
+}
+
+std::wstring ConvertToWString(const std::string & s)
+{
+	const char * cs = s.c_str();
+	const size_t wn = std::mbsrtowcs(NULL, &cs, 0, NULL);
+
+	if (wn == size_t(-1))
+	{
+		return L"";
+	}
+
+	std::vector<wchar_t> buf(wn + 1);
+	const size_t wn_again = std::mbsrtowcs(buf.data(), &cs, wn + 1, NULL);
+
+	if (wn_again == size_t(-1))
+	{
+		return L"";
+	}
+
+	return std::wstring(buf.data(), wn);
+}
+
+LPSTR WinErrorMsg(int nErrorCode, LPSTR pStr, WORD wLength)
+{
+	try
+	{
+		LPSTR  szBuffer = pStr;
+		int nBufferSize = wLength;
+
+		//
+		// prime buffer with error code
+		//
+		sprintf(szBuffer, "Error code %u", nErrorCode);
+
+		//
+		// if we have a message, replace default with msg.
+		//
+		FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM,
+			NULL, nErrorCode,
+			MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // Default language
+			(LPSTR)szBuffer,
+			nBufferSize,
+			NULL);
+	}
+	catch (...)
+	{
+	}
+	return pStr;
 }

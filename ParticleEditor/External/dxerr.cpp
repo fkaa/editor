@@ -3953,7 +3953,7 @@ HRESULT WINAPI DXTraceW( _In_z_ const WCHAR* strFile, _In_ DWORD dwLine, _In_ HR
         swprintf_s( strBuffer, BUFFER_SIZE, L"File: %ls\nLine: %ls\nError Code: %ls\n%lsDo you want to debug the application?",
                     strBufferFile, strBufferLine, strBufferError, strBufferMsg );
 
-        int nResult = MessageBoxW( GetForegroundWindow(), strBuffer, L"Unexpected error encountered", MB_YESNO | MB_ICONERROR );
+        int nResult = MessageBoxW( NULL, strBuffer, L"Unexpected error encountered", MB_YESNO | MB_ICONERROR );
         if( nResult == IDYES )
             DebugBreak();
     }

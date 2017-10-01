@@ -30,27 +30,27 @@
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
-    <CharacterSet>MultiByte</CharacterSet>
+    <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>MultiByte</CharacterSet>
+    <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
-    <CharacterSet>MultiByte</CharacterSet>
+    <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>MultiByte</CharacterSet>
+    <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -70,21 +70,39 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <IncludePath>$(ProjectDir)External\ImWindow;$(ProjectDir)External\ImWindowDX11;$(ProjectDir)External\Externals\imgui;$(ProjectDir)External\Externals\EasyWindow;$(ProjectDir);$(IncludePath)</IncludePath>
+    <LibraryPath>$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <IncludePath>$(ProjectDir)External\ImWindow;$(ProjectDir)External\ImWindowDX11;$(ProjectDir)External\Externals\imgui;$(ProjectDir)External\Externals\EasyWindow;$(ProjectDir);$(IncludePath)</IncludePath>
+    <LibraryPath>$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <IncludePath>$(ProjectDir)External\ImWindow;$(ProjectDir)External\ImWindowDX11;$(ProjectDir)External\Externals\imgui;$(ProjectDir)External\Externals\EasyWindow;$(ProjectDir);$(IncludePath)</IncludePath>
+    <LibraryPath>$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <IncludePath>$(ProjectDir)External\ImWindow;$(ProjectDir)External\ImWindowDX11;$(ProjectDir)External\Externals\imgui;$(ProjectDir)External\Externals\EasyWindow;$(ProjectDir);$(IncludePath)</IncludePath>
+    <LibraryPath>$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+    </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -94,7 +112,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -108,91 +126,99 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <SubSystem>Windows</SubSystem>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Camera.cpp" />
-    <ClCompile Include="Editor.cpp" />
+    <ClCompile Include="Source\Camera.cpp" />
+    <ClCompile Include="External\DebugDraw.cpp" />
     <ClCompile Include="External\dxerr.cpp" />
+    <ClCompile Include="External\Externals\EasyWindow\EasyWindow.cpp" />
+    <ClCompile Include="External\Externals\EasyWindow\EasyWindowWin32.cpp" />
+    <ClCompile Include="External\Externals\EasyWindow\Sample.cpp" />
+    <ClCompile Include="External\Externals\imgui\imgui.cpp" />
+    <ClCompile Include="External\Externals\imgui\imgui_demo.cpp" />
+    <ClCompile Include="External\Externals\imgui\imgui_draw.cpp" />
+    <ClCompile Include="External\Externals\imgui\imgui_impl_dx11.cpp" />
     <ClCompile Include="External\Helpers.cpp" />
-    <ClCompile Include="External\imgui.cpp" />
-    <ClCompile Include="External\imgui_demo.cpp" />
-    <ClCompile Include="External\imgui_dock.cpp" />
-    <ClCompile Include="External\imgui_draw.cpp" />
-    <ClCompile Include="External\imgui_impl_dx11.cpp" />
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="Particle.cpp" />
-    <ClCompile Include="ParticleSystem.cpp" />
+    <ClCompile Include="External\ImWindowDX11\ImwPlatformWindowDX11.cpp" />
+    <ClCompile Include="External\ImWindowDX11\ImwWindowManagerDX11.cpp" />
+    <ClCompile Include="External\ImWindowDX11\Win32MessageHelper.cpp" />
+    <ClCompile Include="External\ImWindow\ImwContainer.cpp" />
+    <ClCompile Include="External\ImWindow\ImwMenu.cpp" />
+    <ClCompile Include="External\ImWindow\ImwPlatformWindow.cpp" />
+    <ClCompile Include="External\ImWindow\ImwStatusBar.cpp" />
+    <ClCompile Include="External\ImWindow\ImwToolBar.cpp" />
+    <ClCompile Include="External\ImWindow\ImwWindow.cpp" />
+    <ClCompile Include="External\ImWindow\ImwWindowManager.cpp" />
+    <ClCompile Include="External\ImWindow\JsonValue.cpp" />
+    <ClCompile Include="Source\Editor.cpp" />
+    <ClCompile Include="Source\main.cpp" />
+    <ClCompile Include="Source\Particle.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Camera.h" />
-    <ClInclude Include="Ease.h" />
-    <ClInclude Include="Editor.h" />
+    <ClInclude Include="Source\Camera.h" />
+    <ClInclude Include="Source\Output.h" />
+    <ClInclude Include="Source\Ease.h" />
+    <ClInclude Include="Source\Editor.h" />
+    <ClInclude Include="External\DebugDraw.h" />
     <ClInclude Include="External\DirectXTK.h" />
     <ClInclude Include="External\dxerr.h" />
+    <ClInclude Include="External\Externals\EasyWindow\EasyWindow.h" />
+    <ClInclude Include="External\Externals\imgui\imconfig.h" />
+    <ClInclude Include="External\Externals\imgui\imgui.h" />
+    <ClInclude Include="External\Externals\imgui\imgui_impl_dx11.h" />
+    <ClInclude Include="External\Externals\imgui\imgui_internal.h" />
+    <ClInclude Include="External\Externals\imgui\stb_rect_pack.h" />
+    <ClInclude Include="External\Externals\imgui\stb_textedit.h" />
+    <ClInclude Include="External\Externals\imgui\stb_truetype.h" />
     <ClInclude Include="External\Helpers.h" />
-    <ClInclude Include="External\imconfig.h" />
-    <ClInclude Include="External\imgui.h" />
-    <ClInclude Include="External\imgui_dock.h" />
-    <ClInclude Include="External\imgui_impl_dx11.h" />
-    <ClInclude Include="External\imgui_internal.h" />
-    <ClInclude Include="External\stb_rect_pack.h" />
-    <ClInclude Include="External\stb_textedit.h" />
-    <ClInclude Include="External\stb_truetype.h" />
-    <ClInclude Include="Globals.h" />
-    <ClInclude Include="Particle.h" />
-    <ClInclude Include="ParticleSystem.h" />
+    <ClInclude Include="External\ImWindowDX11\ImwPlatformWindowDX11.h" />
+    <ClInclude Include="External\ImWindowDX11\ImwWindowManagerDX11.h" />
+    <ClInclude Include="External\ImWindowDX11\Win32MessageHelper.h" />
+    <ClInclude Include="External\ImWindow\ImwConfig.h" />
+    <ClInclude Include="External\ImWindow\ImwContainer.h" />
+    <ClInclude Include="External\ImWindow\ImwMenu.h" />
+    <ClInclude Include="External\ImWindow\ImwPlatformWindow.h" />
+    <ClInclude Include="External\ImWindow\ImwStatusBar.h" />
+    <ClInclude Include="External\ImWindow\ImwToolBar.h" />
+    <ClInclude Include="External\ImWindow\ImwWindow.h" />
+    <ClInclude Include="External\ImWindow\ImwWindowManager.h" />
+    <ClInclude Include="External\ImWindow\JsonValue.h" />
+    <ClInclude Include="Source\Particle.h" />
+    <ClInclude Include="Source\ParticleSystem.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="Source\Viewport.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Resources\nosmoke.ico" />
-    <Image Include="Resources\Particle.dds" />
-    <Image Include="Resources\Plane.dds" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="Resources\Composite.hlsl">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </FxCompile>
-    <FxCompile Include="Resources\Particle.hlsl">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </FxCompile>
-    <FxCompile Include="Resources\Plane.hlsl">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </FxCompile>
-    <FxCompile Include="Resources\TrailParticleSimple.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Geometry</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Geometry</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Geometry</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Geometry</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">GS</EntryPointName>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">GS</EntryPointName>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">GS</EntryPointName>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">GS</EntryPointName>
-    </FxCompile>
+    <ResourceCompile Include="Resource.rc" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="Resource.rc" />
+    <FxCompile Include="Resources\Shaders\SkySphere.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">PS</EntryPointName>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">PS</EntryPointName>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">PS</EntryPointName>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">PS</EntryPointName>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
+    </FxCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
