@@ -125,6 +125,8 @@ public:
 
 			m_BatchLayout = create_input_layout(VertexPositionColor::InputElements, VertexPositionColor::InputElementCount, bytecode, len, device);
 		}
+
+		FXSystem = new ParticleSystem(L"", 2048, 0, 0, device, cxt);
 	}
 
 	~EditorViewport() {
@@ -222,11 +224,15 @@ public:
 		DX::Draw(m_Batch, box, Colors::MediumAquamarine);
 
 		m_Batch->End();
+		
+		ID3D11ShaderResourceView *SRVs[MAX_MATERIAL_TEXTURES] = {};
+		for (int i = 0; i < MAX_MATERIAL_TEXTURES; i++) {
+			auto &mat = Editor::MaterialTextures[i];
+			SRVs[i] = mat.m_SRV;
+		}
+		cxt->PSSetShaderResources(0, MAX_MATERIAL_TEXTURES, SRVs);
 
-		auto list = ImGui::GetWindowDrawList();
-		auto a = GetLastPosition();
-		auto b = GetLastSize();
-		list->AddRect(a, a + b, 0xff0000ff);
+		FXSystem->render(m_Camera, m_States, nullptr);
 	}
 
 private:

@@ -14,11 +14,26 @@ struct MaterialTexture {
 
 namespace Editor {;
 
+enum class AttributeType {
+	Effect,
+	Trail,
+	Billboard,
+	Geometry,
+	Texture,
+	Material
+};
+
+struct AttributeObject {
+	AttributeType type;
+	int index;
+};
+
 extern Output *ConsoleOutput;
 extern bool UnsavedChanges;
 
 extern MaterialTexture MaterialTextures[MAX_MATERIAL_TEXTURES];
 extern TrailParticleMaterial TrailMaterials[MAX_TRAIL_MATERIALS];
+extern std::vector<ParticleEffect> EffectDefinitions;
 
 void Reload(ID3D11Device *device);
 void Run();

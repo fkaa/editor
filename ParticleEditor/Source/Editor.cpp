@@ -16,6 +16,8 @@
 
 #include "External\IconsMaterialDesign.h"
 
+#include "ParticleSystem.h"
+
 #include "Camera.h"
 #include "Particle.h"
 #include "Output.h"
@@ -131,7 +133,6 @@ public:
 	}
 };
 
-
 class TextureList : public ImwWindow {
 public:
 	TextureList()
@@ -190,14 +191,43 @@ public:
 	}
 };
 
+class EffectList : public ImwWindow {
+public:
+	EffectList()
+	{
+		SetTitle(ICON_MD_LIBRARY_BOOKS " Effects");
+	}
 
+	virtual void OnGui()
+	{
+		static int selected = 0;
+		ImGui::BeginChild("EffectList", ImVec2(0, -ImGui::GetItemsLineHeightWithSpacing()), true);
+		for (int i = 0; i < Editor::EffectDefinitions.size(); i++)
+		{
+			auto &fx = Editor::EffectDefinitions[i];
+			
+			char label[128];
+			sprintf(label, ICON_MD_PHOTO_FILTER " %s [%d]", fx.name, fx.m_Count);
+			if (ImGui::Selectable(label, selected == i))
+				selected = i;
+		}
+		ImGui::EndChild();
+		ImGui::Button(ICON_MD_LIBRARY_ADD "");
+		ImGui::SameLine();
+		ImGui::Button(ICON_MD_DELETE "");
 
+	}
+};
+
+ParticleSystem *FXSystem;
 
 namespace Editor {;
 
 bool UnsavedChanges = false;
 MaterialTexture MaterialTextures[MAX_MATERIAL_TEXTURES];
 TrailParticleMaterial TrailMaterials[MAX_TRAIL_MATERIALS];
+
+std::vector<ParticleEffect> EffectDefinitions;
 
 Output *ConsoleOutput;
 
@@ -289,6 +319,16 @@ void Run()
 	MaterialTextures[0].m_TextureName = "DefaultChecker";
 	MaterialTextures[0].m_TexturePath = "Resources/Textures/Plane.dds";
 
+	BillboardParticleDefinition def = {};
+	def.lifetime = -1.f;
+
+	ParticleEffect fx = {};
+	fx.m_Count = 1;
+	fx.m_Entries[0].type = ParticleType::Billboard;
+	fx.m_Entries[0].billboard = &def;
+	EffectDefinitions.push_back(fx);
+
+
 
 
 	ImWindow::ImwWindowManagerDX11 manager;
@@ -305,6 +345,7 @@ void Run()
 	ImwWindow *timeline = new EffectTimeline();
 	ImwWindow *textures = new TextureList();
 	ImwWindow *materials = new MaterialList();
+	ImwWindow *effects = new EffectList();
 	ConsoleOutput = new Output();
 
 	ConsoleOutput->AddLog("Particle Editor v0.1\n");
@@ -315,6 +356,8 @@ void Run()
 	manager.Dock(textures, E_DOCK_ORIENTATION_RIGHT, 0.2f);
 	manager.DockWith(materials, textures, E_DOCK_ORIENTATION_CENTER);
 	manager.DockWith(attr, materials, E_DOCK_ORIENTATION_BOTTOM, 0.5f);
+
+	manager.Dock(effects, E_DOCK_ORIENTATION_LEFT, 0.15);
 
 	manager.Dock(timeline, E_DOCK_ORIENTATION_BOTTOM, 0.2f);
 	manager.DockWith(ConsoleOutput, timeline, E_DOCK_ORIENTATION_CENTER);

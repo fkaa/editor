@@ -44,6 +44,7 @@ struct TrailParticleDefinition {
 	VelocityBox m_TurbulenceEnd;
 	SimpleMath::Vector2 m_SizeStart;
 	SimpleMath::Vector2 m_SizeEnd;
+	float frequency;
 };
 
 struct TrailParticleEffect {
@@ -55,6 +56,7 @@ struct TrailParticle {
 	SimpleMath::Vector3 m_Position;
 	SimpleMath::Vector2 m_Size;
 };
+
 
 using Trail = TrailParticle[16];
 
@@ -71,8 +73,23 @@ struct GeometryParticleDefinition {
 	int m_ModelID;
 };
 
+
+
+struct BillboardParticleDefinition {
+	TrailParticleMaterial m_Material;
+	PosBox m_StartPosition;
+	VelocityBox m_StartVelocity;
+	VelocityBox m_Gravity;
+	VelocityBox m_TurbulenceStart;
+	VelocityBox m_TurbulenceEnd;
+	SimpleMath::Vector2 m_SizeStart;
+	SimpleMath::Vector2 m_SizeEnd;
+	float lifetime;
+};
+
 enum class ParticleType {
 	Trail,
+	Billboard,
 	Geometry
 };
 
@@ -80,14 +97,23 @@ struct ParticleEffectEntry {
 	ParticleType type;
 	union {
 		GeometryParticleDefinition *geometry;
+		BillboardParticleDefinition *billboard;
 		TrailParticleDefinition *trail;
 	};
 };
 
 struct ParticleEffect {
+	char name[16] = "Untitled\0";
+	int m_Count;
 	ParticleEffectEntry m_Entries[8];
 };
 
+struct BillboardParticle {
+	XMFLOAT3 position;
+	XMFLOAT2 size;
+	float age;
+	int idx;
+};
 
 
 
