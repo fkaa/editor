@@ -42,16 +42,26 @@ ParticleSystem::~ParticleSystem()
 	delete m_BillboardBuffer;
 }
 
-void ParticleSystem::ProcessFX(ParticleEffect &fx, XMMATRIX model, float dt)
+void ParticleSystem::ProcessFX(ParticleEffect *fx, XMMATRIX model, float dt)
 {
-	for (int i = 0; i < fx.m_Count; i++) {
-		auto &entry = fx.m_Entries[i];
+	for (int i = 0; i < fx->m_Count; i++) {
+		auto &entry = fx->m_Entries[i];
+
+		fx->age += 0.01f;
 
 		switch (entry.type) {
 			case ParticleType::Billboard:
 			{
 				auto def = *entry.billboard;
 				
+				auto particle = BillboardParticle{
+					{0, 0, 0},
+					{1, 1},
+					fx->age,
+					(int)(Editor::TrailMaterials - def.m_Material)
+				};
+
+				m_BillboardParticles.push_back(particle);
 			} break;
 		}
 	}
@@ -89,6 +99,12 @@ void ParticleSystem::update(Camera *cam, float dt)
 		*ptr++ = particle;
 	}
 	m_BillboardBuffer->Unmap(cxt);
+
+}
+
+void ParticleSystem::frame()
+{
+	m_BillboardParticles.clear();
 }
 
 void ParticleSystem::render(Camera *cam, CommonStates *states, ID3D11RenderTargetView *dst_rtv)
@@ -108,13 +124,20 @@ void ParticleSystem::render(Camera *cam, CommonStates *states, ID3D11RenderTarge
 
 		//cxt->PSSetShaderResources(0, 1, &m_ParticleAtlas);
 
-		auto sampler = states->LinearClamp();
-		cxt->PSSetSamplers(0, 1, &sampler);
+		ID3D11SamplerState *samplers[] = {
+			states->LinearClamp(),
+			states->LinearWrap(),
+			states->PointClamp(),
+			states->PointWrap()
+		};
+		cxt->PSSetSamplers(0, 4, samplers);
 
 
 		for (int i = 0; i < m_BillboardParticles.size(); i++) {
 			cxt->PSSetShader(Editor::TrailMaterials[m_BillboardParticles[i].idx].m_PixelShader, nullptr, 0);
 			cxt->Draw(1, i);
 		}
+
+		cxt->GSSetShader(nullptr, nullptr, 0);
 	}
 }

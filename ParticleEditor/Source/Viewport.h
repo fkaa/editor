@@ -232,7 +232,12 @@ public:
 		}
 		cxt->PSSetShaderResources(0, MAX_MATERIAL_TEXTURES, SRVs);
 
+		if (Editor::SelectedEffect) {
+			FXSystem->ProcessFX(Editor::SelectedEffect, XMMatrixTranslation(0, 0, 0), 1.f);
+		}
+		FXSystem->update(m_Camera, 1.f);
 		FXSystem->render(m_Camera, m_States, nullptr);
+		FXSystem->frame();
 	}
 
 private:

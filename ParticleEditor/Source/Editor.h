@@ -4,6 +4,7 @@
 #include "Output.h"
 
 #define MAX_TRAIL_MATERIALS 16
+#define MAX_BILLBOARD_MATERIALS 16
 #define MAX_MATERIAL_TEXTURES 16
 
 struct MaterialTexture {
@@ -34,6 +35,8 @@ extern bool UnsavedChanges;
 extern MaterialTexture MaterialTextures[MAX_MATERIAL_TEXTURES];
 extern TrailParticleMaterial TrailMaterials[MAX_TRAIL_MATERIALS];
 extern std::vector<ParticleEffect> EffectDefinitions;
+
+extern ParticleEffect *SelectedEffect;
 
 void Reload(ID3D11Device *device);
 void Run();

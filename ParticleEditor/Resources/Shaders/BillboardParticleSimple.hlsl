@@ -1,10 +1,7 @@
 cbuffer Camera : register(b0)
 {
-	float4x4 World;
 	float4x4 View;
 	float4x4 Proj;
-	float4x4 NormalMatrix;
-	float4x4 InverseWVP;
 };
 
 struct VSIn {
@@ -15,10 +12,16 @@ struct VSIn {
 	int idx : IDX;
 };
 
-struct GSout {
+struct GSOut {
 	float4 pos : SV_POSITION;
 	float2 uv : TEXCOORD;
+	float age : AGE;
 };
+
+VSIn VS(VSIn input)
+{
+	return input;
+}
 
 static const float4 UV = float4(0, 0, 1, 1);
 
@@ -28,7 +31,7 @@ void GS(point VSIn inp[1], inout TriangleStream<GSOut> outstream)
 	VSIn input = inp[0];
 
 	GSOut output;
-	output.color = input.color;
+	output.age = input.age;
 
 	float w = input.scale.x;
 	float h = input.scale.y;
@@ -71,7 +74,10 @@ void GS(point VSIn inp[1], inout TriangleStream<GSOut> outstream)
 
 }
 
+Texture2D Plane : register(t0);
+SamplerState Sampler : register(s1);
+
 float4 PS(GSOut input) : SV_Target0
 {
-	return float4(input.uv, 0, 1);
+	return float4(Plane.Sample(Sampler, input.uv+float2(0, input.age*0.1)).xyz, 1);
 }

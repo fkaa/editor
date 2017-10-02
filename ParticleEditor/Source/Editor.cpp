@@ -150,7 +150,7 @@ public:
 			if (tex.m_TexturePath.empty())
 				continue;
 			char label[128];
-			sprintf(label, "%s %s", tex.m_SRV ? ICON_MD_DONE : ICON_MD_WARNING, tex.m_TextureName.c_str());
+			sprintf(label, "%s t%d %s", tex.m_SRV ? ICON_MD_DONE : ICON_MD_WARNING, i, tex.m_TextureName.c_str());
 			if (ImGui::Selectable(label, selected == i))
 				selected = i;
 		}
@@ -208,8 +208,9 @@ public:
 			
 			char label[128];
 			sprintf(label, ICON_MD_PHOTO_FILTER " %s [%d]", fx.name, fx.m_Count);
-			if (ImGui::Selectable(label, selected == i))
-				selected = i;
+			if (ImGui::Selectable(label, selected == i)) {
+				Editor::SelectedEffect = &Editor::EffectDefinitions[i];
+			}
 		}
 		ImGui::EndChild();
 		ImGui::Button(ICON_MD_LIBRARY_ADD "");
@@ -228,6 +229,7 @@ MaterialTexture MaterialTextures[MAX_MATERIAL_TEXTURES];
 TrailParticleMaterial TrailMaterials[MAX_TRAIL_MATERIALS];
 
 std::vector<ParticleEffect> EffectDefinitions;
+ParticleEffect *SelectedEffect;
 
 Output *ConsoleOutput;
 
@@ -247,7 +249,8 @@ void Reload(ID3D11Device *device)
 					char err[256];
 					WinErrorMsg(res, err, 256);
 
-					ConsoleOutput->AddLog("[error] %s\n", err);
+					ConsoleOutput->AddLog("[error] Failed to load texture '%s'\n", mat.m_TexturePath.c_str());
+					ConsoleOutput->AddLog("[error] %s", err);
 					continue;
 				}
 				if (mat.m_SRV)
@@ -315,12 +318,15 @@ void Style();
 void Run()
 {
 	TrailMaterials[0].m_MaterialName = "Default";
-	TrailMaterials[0].m_ShaderPath = "Resources/Shaders/TrailParticleSimple.hlsl";
+	TrailMaterials[0].m_ShaderPath = "Resources/Shaders/BillboardParticleSimple.hlsl";
 	MaterialTextures[0].m_TextureName = "DefaultChecker";
 	MaterialTextures[0].m_TexturePath = "Resources/Textures/Plane.dds";
+	MaterialTextures[1].m_TextureName = "Noise";
+	MaterialTextures[1].m_TexturePath = "Resources/Textures/Noise.png";
 
 	BillboardParticleDefinition def = {};
 	def.lifetime = -1.f;
+	def.m_Material = &TrailMaterials[0];
 
 	ParticleEffect fx = {};
 	fx.m_Count = 1;
@@ -363,6 +369,7 @@ void Run()
 	manager.DockWith(ConsoleOutput, timeline, E_DOCK_ORIENTATION_CENTER);
 
 	bool reloading = false;
+	Reload(ImwPlatformWindowDX11::s_pDevice);
 
 	do
 	{

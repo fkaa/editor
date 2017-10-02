@@ -76,7 +76,7 @@ struct GeometryParticleDefinition {
 
 
 struct BillboardParticleDefinition {
-	TrailParticleMaterial m_Material;
+	TrailParticleMaterial *m_Material;
 	PosBox m_StartPosition;
 	VelocityBox m_StartVelocity;
 	VelocityBox m_Gravity;
@@ -105,6 +105,7 @@ struct ParticleEffectEntry {
 struct ParticleEffect {
 	char name[16] = "Untitled\0";
 	int m_Count;
+	float age;
 	ParticleEffectEntry m_Entries[8];
 };
 
