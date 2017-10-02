@@ -9,11 +9,15 @@ cbuffer Camera : register(b0)
 
 struct VSIn {
 	float3 pos : POSITION;
-	float4 color : COLOR;
-	float2 scale : SCALE;
+	float2 scale : SIZE;
 	float age : AGE;
 
 	int idx : IDX;
+};
+
+struct GSout {
+	float4 pos : SV_POSITION;
+	float2 uv : TEXCOORD;
 };
 
 static const float4 UV = float4(0, 0, 1, 1);
