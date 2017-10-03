@@ -76,12 +76,13 @@ struct GeometryParticleDefinition {
 
 
 struct BillboardParticleDefinition {
+	std::string name;
 	TrailParticleMaterial *m_Material;
 	PosBox m_StartPosition;
 	VelocityBox m_StartVelocity;
 	VelocityBox m_Gravity;
 	VelocityBox m_TurbulenceStart;
-	VelocityBox m_TurbulenceEnd;
+	VelocityBox m_TurbuldsenceEnd;
 	SimpleMath::Vector2 m_SizeStart;
 	SimpleMath::Vector2 m_SizeEnd;
 	float lifetime;
@@ -92,6 +93,15 @@ enum class ParticleType {
 	Billboard,
 	Geometry
 };
+
+inline ParticleType ParticleTypeFromString(std::string str)
+{
+	if (str == "trail") return ParticleType::Trail;
+	if (str == "billboard") return ParticleType::Billboard;
+	if (str == "geometry") return ParticleType::Geometry;
+	
+	assert(false);
+}
 
 struct ParticleEffectEntry {
 	ParticleType type;

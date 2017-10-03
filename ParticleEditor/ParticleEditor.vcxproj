@@ -71,19 +71,19 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>$(ProjectDir)External\ImWindow;$(ProjectDir)External\ImWindowDX11;$(ProjectDir)External\Externals\imgui;$(ProjectDir)External\Externals\EasyWindow;$(ProjectDir);$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)External\json\include;$(ProjectDir)External\ImWindow;$(ProjectDir)External\ImWindowDX11;$(ProjectDir)External\Externals\imgui;$(ProjectDir)External\Externals\EasyWindow;$(ProjectDir);$(IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>$(ProjectDir)External\ImWindow;$(ProjectDir)External\ImWindowDX11;$(ProjectDir)External\Externals\imgui;$(ProjectDir)External\Externals\EasyWindow;$(ProjectDir);$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)External\json\include;$(ProjectDir)External\ImWindow;$(ProjectDir)External\ImWindowDX11;$(ProjectDir)External\Externals\imgui;$(ProjectDir)External\Externals\EasyWindow;$(ProjectDir);$(IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(ProjectDir)External\ImWindow;$(ProjectDir)External\ImWindowDX11;$(ProjectDir)External\Externals\imgui;$(ProjectDir)External\Externals\EasyWindow;$(ProjectDir);$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)External\json\include;$(ProjectDir)External\ImWindow;$(ProjectDir)External\ImWindowDX11;$(ProjectDir)External\Externals\imgui;$(ProjectDir)External\Externals\EasyWindow;$(ProjectDir);$(IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>$(ProjectDir)External\ImWindow;$(ProjectDir)External\ImWindowDX11;$(ProjectDir)External\Externals\imgui;$(ProjectDir)External\Externals\EasyWindow;$(ProjectDir);$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)External\json\include;$(ProjectDir)External\ImWindow;$(ProjectDir)External\ImWindowDX11;$(ProjectDir)External\Externals\imgui;$(ProjectDir)External\Externals\EasyWindow;$(ProjectDir);$(IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">

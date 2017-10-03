@@ -23,6 +23,10 @@
 #include "Output.h"
 #include "Viewport.h"
 
+#include <tao/json.hpp>
+
+using namespace tao;
+
 inline float RandomFloat(float lo, float hi)
 {
 	return ((hi - lo) * ((float)rand() / RAND_MAX)) + lo;
@@ -225,13 +229,37 @@ ParticleSystem *FXSystem;
 namespace Editor {;
 
 bool UnsavedChanges = false;
+
 MaterialTexture MaterialTextures[MAX_MATERIAL_TEXTURES];
 TrailParticleMaterial TrailMaterials[MAX_TRAIL_MATERIALS];
+BillboardParticleDefinition BillboardDefinitions[MAX_BILLBOARD_PARTICLE_DEFINITIONS];
 
 std::vector<ParticleEffect> EffectDefinitions;
 ParticleEffect *SelectedEffect;
 
 Output *ConsoleOutput;
+
+JsonValue EditorState;
+
+//PosBox GetJsonBox
+
+BillboardParticleDefinition *GetBillboardDef(std::string name)
+{
+	for (int i = 0; i < MAX_BILLBOARD_PARTICLE_DEFINITIONS; i++) {
+		auto &def = BillboardDefinitions[i];
+		if (def.name == name)
+			return &BillboardDefinitions[i];
+	}
+}
+
+TrailParticleMaterial *GetMaterial(std::string name)
+{
+	for (int i = 0; i < MAX_TRAIL_MATERIALS; i++) {
+		auto &def = TrailMaterials[i];
+		if (def.m_MaterialName == name)
+			return &TrailMaterials[i];
+	}
+}
 
 void Reload(ID3D11Device *device)
 {
@@ -314,6 +342,77 @@ void Reload(ID3D11Device *device)
 }
 
 void Style();
+
+void Load()
+{
+	auto data = json::parse_file("editor.json");
+	auto map = data.get_object();
+	
+	auto materials = map.at("materials").get_array();
+	auto mats = TrailMaterials;
+	for (auto entry : materials) {
+		auto e = entry.get_object();
+		auto mat = TrailParticleMaterial {
+			e.at("name").get_string(),
+			e.at("path").get_string(),
+			nullptr
+		};
+		*mats++ = mat;
+	}
+
+	auto textures = map.at("textures").get_array();
+	auto texs = MaterialTextures;
+	for (auto entry : textures) {
+		auto e = entry.get_object();
+		auto tex = MaterialTexture {
+			e.at("name").get_string(),
+			e.at("path").get_string(),
+			nullptr
+		};
+		*texs++ = tex;
+	}
+
+	auto bdefs = map.at("billboard_definitions").get_array();
+	auto bd = BillboardDefinitions;
+	for (auto entry : bdefs) {
+		auto e = entry.get_object();
+		/*auto def = BillboardParticleDefinition {
+			e.at("name").get_string(),
+			GetMaterial(e.at("material").get_string()),
+			nullptr
+		};
+		*bd++ = def;*/
+	}
+
+	auto effects = map.at("fx").get_array();
+	for (auto entry : effects) {
+		auto e = entry.get_object();
+
+		ParticleEffect fx = {};
+		auto name = e.at("name").get_string();
+		memcpy(fx.name, name.data(), min(name.size(), 15));
+
+		auto entries = e.at("entries").get_array();
+		for (auto fxentry : entries) {
+			auto type = ParticleTypeFromString(fxentry.at("type").get_string());
+			auto name = fxentry.at("name").get_string();
+			
+			ParticleEffectEntry ent = {};
+			ent.type = type;
+
+			switch (type) {
+				case ParticleType::Billboard:
+					ent.billboard = GetBillboardDef(name);
+					break;
+			}
+
+		}
+	}
+}
+
+void Save() {
+	auto val = json::empty_object;
+}
 
 void Run()
 {

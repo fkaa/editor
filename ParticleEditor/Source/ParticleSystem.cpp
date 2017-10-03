@@ -19,6 +19,18 @@ ParticleSystem::ParticleSystem(const wchar_t *file, UINT capacity, UINT width, U
 	//if (file)
 	//	DeserializeParticles(file, effect_definitions, particle_definitions);
 
+	D3D11_BLEND_DESC state = {};
+	ZeroMemory(&state, sizeof(D3D11_BLEND_DESC));
+	state.RenderTarget[0].BlendEnable = TRUE;
+	state.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+	state.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+	state.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+	state.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_SRC_ALPHA;
+	state.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA;
+	state.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+	state.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+	DXCALL(device->CreateBlendState(&state, &m_ParticleBlend));
+
 	ID3DBlob *blob = compile_shader(L"Resources/Shaders/BillboardParticleSimple.hlsl", "VS", "vs_5_0", device);
 	DXCALL(device->CreateVertexShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, &m_DefaultBillboardVS));
 
@@ -131,6 +143,9 @@ void ParticleSystem::render(Camera *cam, CommonStates *states, ID3D11RenderTarge
 			states->PointWrap()
 		};
 		cxt->PSSetSamplers(0, 4, samplers);
+		float blend[4] = { 1, 1, 1, 1 };
+		cxt->OMSetBlendState(m_ParticleBlend, nullptr, 0xffffffff);
+
 
 
 		for (int i = 0; i < m_BillboardParticles.size(); i++) {
