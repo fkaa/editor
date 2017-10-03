@@ -70,9 +70,14 @@ public:
 	virtual void OnToolBar() override
 	{
 		ImGui::BeginChild("Toolbar.main", ImVec2(0, ImGui::GetItemsLineHeightWithSpacing() + 10), true);
+		
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.420, 0.482, 0.082, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.576, 0.647, 0.216, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.741, 0.808, 0.404, 1.0f));
 		ImGui::Button(ICON_MD_PHOTO_FILTER " [FX]");
 		if (ImGui::IsItemHovered())
 			ImGui::SetTooltip("Create new Particle FX");
+		ImGui::PopStyleColor(3);
 
 		ImGui::SameLine();
 		ImGui::TextDisabled("|");
@@ -140,7 +145,7 @@ public:
 				ImGui::Text("Texture");
 
 				if (tex.m_SRV)
-					ImGui::Image(tex.m_SRV, ImVec2(64, 64));
+					ImGui::Image(tex.m_SRV, ImVec2(128, 128));
 
 				tex.m_TextureName.resize(128, '\0');
 				ImGui::InputText("Name", (char*)tex.m_TextureName.data(), 120);
@@ -277,7 +282,7 @@ public:
 				continue;
 
 			char label[128];
-			sprintf(label, ICON_MD_PHOTO_FILTER " %s", def.name);
+			sprintf(label, ICON_MD_CROP_FREE " %s", def.name.c_str());
 			if (ImGui::Selectable(label, selected == i)) {
 				Editor::SelectedObject = {
 					Editor::AttributeType::Billboard,
@@ -304,18 +309,44 @@ public:
 	{
 		static int selected = 0;
 		ImGui::BeginChild("EffectList", ImVec2(0, -ImGui::GetItemsLineHeightWithSpacing()), true);
+		
+		
 		for (int i = 0; i < Editor::EffectDefinitions.size(); i++)
 		{
 			auto &fx = Editor::EffectDefinitions[i];
 			
 			char label[128];
 			sprintf(label, ICON_MD_PHOTO_FILTER " %s [%d]", fx.name, fx.m_Count);
-			if (ImGui::Selectable(label, selected == i)) {
-				Editor::SelectedObject = {
+			bool node = ImGui::TreeNode(label);
+			
+			ImGui::SameLine();
+			
+			if (ImGui::Button(ICON_MD_PLAY_ARROW)) {
+				Editor::SelectedObject = Editor::AttributeObject{
 					Editor::AttributeType::Effect,
 					i
 				};
 				Editor::SelectedEffect = &Editor::EffectDefinitions[i];
+			}
+
+			if (node) {
+				for (int j = 0; j < fx.m_Count; j++) {
+					auto &entry = fx.m_Entries[j];
+
+					switch (entry.type) {
+						case ParticleType::Billboard: {
+							auto def = entry.billboard;
+							sprintf(label, ICON_MD_CROP_FREE " %s", def->name.c_str());
+							if (ImGui::Selectable(label, selected == j)) {
+								Editor::SelectedObject = {
+									Editor::AttributeType::Billboard,
+									(int)(def - Editor::BillboardDefinitions)
+								};
+							}
+						} break;
+					}
+				}
+				ImGui::TreePop();
 			}
 		}
 		ImGui::EndChild();
@@ -644,6 +675,7 @@ void Run()
 	ImwWindow *textures = new TextureList();
 	ImwWindow *materials = new MaterialList();
 	ImwWindow *effects = new EffectList();
+	ImwWindow *particles = new ParticleList();
 	ConsoleOutput = new Output();
 
 	ConsoleOutput->AddLog("Particle Editor v0.1\n");
@@ -656,6 +688,7 @@ void Run()
 	manager.DockWith(attr, materials, E_DOCK_ORIENTATION_BOTTOM, 0.5f);
 
 	manager.Dock(effects, E_DOCK_ORIENTATION_LEFT, 0.15);
+	manager.DockWith(particles, effects, E_DOCK_ORIENTATION_BOTTOM, 0.5f);
 
 	manager.Dock(timeline, E_DOCK_ORIENTATION_BOTTOM, 0.2f);
 	manager.DockWith(ConsoleOutput, timeline, E_DOCK_ORIENTATION_CENTER);
@@ -687,7 +720,7 @@ void Style()
 {
 	ImGuiStyle& style = ImGui::GetStyle();
 
-	auto accent = ImVec4(0.529f, 0.392f, 0.722f, 1.00f);
+	auto accent = ImVec4(0.00f, 0.48f, 0.80f, 1.00f);
 
 	style.Colors[ImGuiCol_Text] = ImVec4(0.90f, 0.90f, 0.90f, 1.00f);
 	style.Colors[ImGuiCol_TextDisabled] = ImVec4(0.33f, 0.33f, 0.33f, 1.00f);

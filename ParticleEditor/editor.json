@@ -31,6 +31,10 @@
         {
             "name": "Noise",
             "path": "Resources/Textures/Noise.png"
+        },
+        {
+            "name": "Mask",
+            "path": "Resources/Textures/Noise.png"
         }
     ]
 }
