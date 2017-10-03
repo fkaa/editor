@@ -23,9 +23,9 @@
 #include "Output.h"
 #include "Viewport.h"
 
-#include <tao/json.hpp>
+#include <External/json.hpp>
 
-using namespace tao;
+using json = nlohmann::json;
 
 inline float RandomFloat(float lo, float hi)
 {
@@ -120,7 +120,18 @@ public:
 
 	virtual void OnGui() override
 	{
+		switch (Editor::SelectedObject.type) {
+			case Editor::AttributeType::Texture: {
+				MaterialTexture &tex = Editor::MaterialTextures[Editor::SelectedObject.index];
+				ImGui::Text("%s", tex.m_TextureName.c_str());
+				if (tex.m_SRV)
+					ImGui::Image(tex.m_SRV, ImVec2(64, 64));
+				tex.m_TextureName.resize(128, '\0');
+				ImGui::InputText("Name", (char*)tex.m_TextureName.data(), 120);
 
+
+			} break;
+		}
 	}
 };
 
@@ -155,8 +166,14 @@ public:
 				continue;
 			char label[128];
 			sprintf(label, "%s t%d %s", tex.m_SRV ? ICON_MD_DONE : ICON_MD_WARNING, i, tex.m_TextureName.c_str());
-			if (ImGui::Selectable(label, selected == i))
+			if (ImGui::Selectable(label, selected == i)) {
+				Editor::SelectedObject = {
+					Editor::AttributeType::Texture,
+					i
+				};
+
 				selected = i;
+			}
 		}
 		ImGui::EndChild();
 		ImGui::Button(ICON_MD_ADD_A_PHOTO "");
@@ -184,8 +201,47 @@ public:
 				continue;
 			char label[128];
 			sprintf(label, "%s %s", mat.m_PixelShader ? ICON_MD_DONE : ICON_MD_WARNING, mat.m_MaterialName.c_str());
-			if (ImGui::Selectable(label, selected == i))
+			if (ImGui::Selectable(label, selected == i)) {
+				Editor::SelectedObject = {
+					Editor::AttributeType::Material,
+					i
+				};
 				selected = i;
+			}
+		}
+		ImGui::EndChild();
+		ImGui::Button(ICON_MD_LIBRARY_ADD "");
+		ImGui::SameLine();
+		ImGui::Button(ICON_MD_DELETE "");
+
+	}
+};
+
+class ParticleList : public ImwWindow {
+public:
+	ParticleList()
+	{
+		SetTitle(ICON_MD_LIBRARY_BOOKS " Particles");
+	}
+
+	virtual void OnGui()
+	{
+		static int selected = 0;
+		ImGui::BeginChild("ParticleList", ImVec2(0, -ImGui::GetItemsLineHeightWithSpacing()), true);
+		for (int i = 0; i < MAX_BILLBOARD_PARTICLE_DEFINITIONS; i++)
+		{
+			auto &def = Editor::BillboardDefinitions[i];
+			if (def.name.empty())
+				continue;
+
+			char label[128];
+			sprintf(label, ICON_MD_PHOTO_FILTER " %s", def.name);
+			if (ImGui::Selectable(label, selected == i)) {
+				Editor::SelectedObject = {
+					Editor::AttributeType::Billboard,
+					i
+				};
+			}
 		}
 		ImGui::EndChild();
 		ImGui::Button(ICON_MD_LIBRARY_ADD "");
@@ -213,6 +269,10 @@ public:
 			char label[128];
 			sprintf(label, ICON_MD_PHOTO_FILTER " %s [%d]", fx.name, fx.m_Count);
 			if (ImGui::Selectable(label, selected == i)) {
+				Editor::SelectedObject = {
+					Editor::AttributeType::Effect,
+					i
+				};
 				Editor::SelectedEffect = &Editor::EffectDefinitions[i];
 			}
 		}
@@ -228,20 +288,20 @@ ParticleSystem *FXSystem;
 
 namespace Editor {;
 
-bool UnsavedChanges = false;
+Output *ConsoleOutput;
+
+bool UnsavedChanges = true;
+AttributeObject SelectedObject;
 
 MaterialTexture MaterialTextures[MAX_MATERIAL_TEXTURES];
 TrailParticleMaterial TrailMaterials[MAX_TRAIL_MATERIALS];
 BillboardParticleDefinition BillboardDefinitions[MAX_BILLBOARD_PARTICLE_DEFINITIONS];
 
 std::vector<ParticleEffect> EffectDefinitions;
+
 ParticleEffect *SelectedEffect;
 
-Output *ConsoleOutput;
-
 JsonValue EditorState;
-
-//PosBox GetJsonBox
 
 BillboardParticleDefinition *GetBillboardDef(std::string name)
 {
@@ -250,6 +310,8 @@ BillboardParticleDefinition *GetBillboardDef(std::string name)
 		if (def.name == name)
 			return &BillboardDefinitions[i];
 	}
+
+	return nullptr;
 }
 
 TrailParticleMaterial *GetMaterial(std::string name)
@@ -259,6 +321,8 @@ TrailParticleMaterial *GetMaterial(std::string name)
 		if (def.m_MaterialName == name)
 			return &TrailMaterials[i];
 	}
+
+	return nullptr;
 }
 
 void Reload(ID3D11Device *device)
@@ -345,57 +409,54 @@ void Style();
 
 void Load()
 {
-	auto data = json::parse_file("editor.json");
-	auto map = data.get_object();
+	std::ifstream i("editor.json");
+	json data;
+	i >> data;
 	
-	auto materials = map.at("materials").get_array();
+	auto materials = data["materials"];
 	auto mats = TrailMaterials;
 	for (auto entry : materials) {
-		auto e = entry.get_object();
 		auto mat = TrailParticleMaterial {
-			e.at("name").get_string(),
-			e.at("path").get_string(),
+			entry["name"],
+			entry["path"],
 			nullptr
 		};
 		*mats++ = mat;
 	}
 
-	auto textures = map.at("textures").get_array();
+	auto textures = data.at("textures");
 	auto texs = MaterialTextures;
 	for (auto entry : textures) {
-		auto e = entry.get_object();
-		auto tex = MaterialTexture {
-			e.at("name").get_string(),
-			e.at("path").get_string(),
+		auto tex = MaterialTexture{
+			entry["name"],
+			entry["path"],
 			nullptr
 		};
 		*texs++ = tex;
 	}
 
-	auto bdefs = map.at("billboard_definitions").get_array();
+	auto bdefs = data.at("billboard_definitions");
 	auto bd = BillboardDefinitions;
 	for (auto entry : bdefs) {
-		auto e = entry.get_object();
-		/*auto def = BillboardParticleDefinition {
-			e.at("name").get_string(),
-			GetMaterial(e.at("material").get_string()),
-			nullptr
-		};
-		*bd++ = def;*/
+		BillboardParticleDefinition def = {};
+		std::string n = entry["name"];
+		def.name = n;
+		def.m_Material = GetMaterial(entry["material_name"]);
+		def.lifetime = entry["lifetime"];
+		*bd++ = def;
 	}
 
-	auto effects = map.at("fx").get_array();
+	auto effects = data.at("fx");
 	for (auto entry : effects) {
-		auto e = entry.get_object();
-
+		
 		ParticleEffect fx = {};
-		auto name = e.at("name").get_string();
+		std::string name = entry["name"];
 		memcpy(fx.name, name.data(), min(name.size(), 15));
 
-		auto entries = e.at("entries").get_array();
+		auto entries = entry["entries"];
 		for (auto fxentry : entries) {
-			auto type = ParticleTypeFromString(fxentry.at("type").get_string());
-			auto name = fxentry.at("name").get_string();
+			auto type = ParticleTypeFromString(fxentry["type"]);
+			std::string name = fxentry["name"];
 			
 			ParticleEffectEntry ent = {};
 			ent.type = type;
@@ -406,34 +467,124 @@ void Load()
 					break;
 			}
 
+			fx.m_Entries[fx.m_Count++] = ent;
 		}
+
+		EffectDefinitions.push_back(fx);
 	}
 }
 
 void Save() {
-	auto val = json::empty_object;
+	json j;
+
+	j["billboard_definitions"] = {};
+	for (int i = 0; i < MAX_BILLBOARD_PARTICLE_DEFINITIONS; i++) {
+		auto def = BillboardDefinitions[i];
+		if (def.name.empty())
+			continue;
+
+		json definition = {
+			{"name", def.name},
+			{"material_name", def.m_Material->m_MaterialName},
+			{"lifetime", def.lifetime },
+			/*{"start",
+				{
+					"min", {def.m_StartPosition.m_Min.x, def.m_StartPosition.m_Min.y, def.m_StartPosition.m_Min.z }
+				},
+				{
+					"max", {def.m_StartPosition.m_Max.x, def.m_StartPosition.m_Max.y, def.m_StartPosition.m_Max.z }
+				}
+			}*/
+		};
+
+		j["billboard_definitions"].push_back(definition);
+	}
+
+	j["materials"] = {};
+	for (int i = 0; i < MAX_TRAIL_MATERIALS; i++) {
+		auto &mat = TrailMaterials[i];
+		if (mat.m_MaterialName.empty())
+			continue;
+
+		json material = {
+			{"name", mat.m_MaterialName },
+			{"path", mat.m_ShaderPath }
+		};
+
+		j["materials"].push_back(material);
+	}
+
+	j["textures"] = {};
+	for (int i = 0; i < MAX_MATERIAL_TEXTURES; i++) {
+		auto &tex = MaterialTextures[i];
+		if (tex.m_TextureName.empty())
+			continue;
+
+		json material = {
+			{ "name", tex.m_TextureName },
+			{ "path", tex.m_TexturePath }
+		};
+
+		j["textures"].push_back(material);
+	}
+
+	j["fx"] = {};
+	for (auto &fx : EffectDefinitions) {
+		json entries = {};
+		for (int i = 0; i < fx.m_Count; i++) {
+			auto &pentry = fx.m_Entries[i];
+			json entry;
+
+			switch (pentry.type) {
+				case ParticleType::Trail:
+					entry["type"] = "trail";
+					break;
+				case ParticleType::Billboard:
+					entry["type"] = "billboard";
+					entry["name"] = pentry.billboard->name;
+					break;
+				case ParticleType::Geometry:
+					entry["type"] = "geometry";
+					break;
+			}
+
+			entries.push_back(entry);
+		}
+
+		json obj = {
+			{"entries", entries},
+			{"name", fx.name}
+		};
+		
+		j["fx"].push_back(obj);
+	}
+
+
+	std::ofstream o("editor.json");
+	o << std::setw(4) << j << std::endl;
 }
 
 void Run()
 {
-	TrailMaterials[0].m_MaterialName = "Default";
+	/*TrailMaterials[0].m_MaterialName = "Default";
 	TrailMaterials[0].m_ShaderPath = "Resources/Shaders/BillboardParticleSimple.hlsl";
 	MaterialTextures[0].m_TextureName = "DefaultChecker";
 	MaterialTextures[0].m_TexturePath = "Resources/Textures/Plane.dds";
 	MaterialTextures[1].m_TextureName = "Noise";
 	MaterialTextures[1].m_TexturePath = "Resources/Textures/Noise.png";
 
-	BillboardParticleDefinition def = {};
-	def.lifetime = -1.f;
-	def.m_Material = &TrailMaterials[0];
+	BillboardDefinitions[0].name = "DefaultBillboard";
+	BillboardDefinitions[0].lifetime = -1.f;
+	BillboardDefinitions[0].m_Material = &TrailMaterials[0];
 
 	ParticleEffect fx = {};
 	fx.m_Count = 1;
 	fx.m_Entries[0].type = ParticleType::Billboard;
-	fx.m_Entries[0].billboard = &def;
-	EffectDefinitions.push_back(fx);
+	fx.m_Entries[0].billboard = &BillboardDefinitions[0];
+	EffectDefinitions.push_back(fx);*/
 
-
+	Load();
+	Save();
 
 
 	ImWindow::ImwWindowManagerDX11 manager;
@@ -482,6 +633,8 @@ void Run()
 		} else {
 			reloading = false;
 		}
+
+		//ImGui::GetIO().DeltaTime = 0.016f;
 
 		Sleep(1);
 	} while (manager.Run(false) && manager.Run(true));

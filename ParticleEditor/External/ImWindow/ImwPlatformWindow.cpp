@@ -165,9 +165,9 @@ namespace ImWindow
 		s_bStatePush = true;
 		if (m_pState != NULL)
 		{
-			//m_pPreviousState = ImGui::GetInternalState();
-			//ImGui::SetInternalState(m_pState);
-			//memcpy(&((ImGuiState*)m_pState)->Style, &((ImGuiState*)m_pPreviousState)->Style, sizeof(ImGuiStyle));
+			m_pPreviousState = ImGui::GetInternalState();
+			ImGui::SetInternalState(m_pState);
+			memcpy(&((ImGuiState*)m_pState)->Style, &((ImGuiState*)m_pPreviousState)->Style, sizeof(ImGuiStyle));
 		}
 	}
 
@@ -177,8 +177,8 @@ namespace ImWindow
 		s_bStatePush = false;
 		if (m_pState != NULL)
 		{
-			//memcpy(&((ImGuiState*)m_pPreviousState)->Style, &((ImGuiState*)m_pState)->Style, sizeof(ImGuiStyle));
-			//ImGui::SetInternalState(m_pPreviousState);
+			memcpy(&((ImGuiState*)m_pPreviousState)->Style, &((ImGuiState*)m_pState)->Style, sizeof(ImGuiStyle));
+			ImGui::SetInternalState(m_pPreviousState);
 		}
 	}
 

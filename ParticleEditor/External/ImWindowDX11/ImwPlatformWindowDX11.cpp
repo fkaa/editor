@@ -279,6 +279,8 @@ void ImwPlatformWindowDX11::Render()
 
 		ImGui::Render();
 
+		ImGui_ImplDX11_NewFrame();
+
 		if (this == s_pLastHoveredWindow)
 		{
 			/*switch (ImGui::GetMouseCursor())

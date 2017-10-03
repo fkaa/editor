@@ -31,7 +31,9 @@ struct AttributeObject {
 };
 
 extern Output *ConsoleOutput;
+
 extern bool UnsavedChanges;
+extern AttributeObject SelectedObject;
 
 extern MaterialTexture MaterialTextures[MAX_MATERIAL_TEXTURES];
 extern TrailParticleMaterial TrailMaterials[MAX_TRAIL_MATERIALS];

@@ -1,0 +1,36 @@
+{
+    "billboard_definitions": [
+        {
+            "lifetime": -1.0,
+            "material_name": "Default",
+            "name": "DefaultBillboard"
+        }
+    ],
+    "fx": [
+        {
+            "entries": [
+                {
+                    "name": "DefaultBillboard",
+                    "type": "billboard"
+                }
+            ],
+            "name": "Untitled"
+        }
+    ],
+    "materials": [
+        {
+            "name": "Default",
+            "path": "Resources/Shaders/BillboardParticleSimple.hlsl"
+        }
+    ],
+    "textures": [
+        {
+            "name": "DefaultChecker",
+            "path": "Resources/Textures/Plane.dds"
+        },
+        {
+            "name": "Noise",
+            "path": "Resources/Textures/Noise.png"
+        }
+    ]
+}
