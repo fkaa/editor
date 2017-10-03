@@ -76,19 +76,50 @@ void GS(point VSIn inp[1], inout TriangleStream<GSOut> outstream)
 
 Texture2D Plane : register(t0);
 Texture2D Noise : register(t1);
+Texture2D Mask : register(t2);
+
 SamplerState Sampler : register(s1);
+SamplerState SamplerClamp : register(s0);
+
 
 float4 PS(GSOut input) : SV_Target0
 {
-	float3 noiser = Noise.Sample(Sampler, input.uv + float2(0, input.age*0.1)).r;
-	float3 noiseg = Noise.Sample(Sampler, input.uv + float2(0, input.age*0.2)).g;
-	float3 noiseb = Noise.Sample(Sampler, input.uv + float2(0, input.age*0.4)).b;
-	float3 col = Plane.Sample(Sampler, input.uv + float2(sin(input.age)*0.1, input.age*0.4)).rgb;
+	float noiser = Noise.Sample(Sampler, input.uv + float2(0, input.age*0.2)).r;
+	float noiseg = Noise.Sample(Sampler, input.uv + float2(0, input.age*0.11)).g;
+	//float3 noiseb = Noise.Sample(Sampler, input.uv + float2(0, input.age*0.4)).b;
+
+	float rg = noiser + noiseg;
+
+	float maskg = Mask.Sample(Sampler, input.uv).a;
+
+	float sum = rg * maskg * (input.uv.y);
+
+	
+	float4 col = Mask.Sample(SamplerClamp, input.uv + float2(0, sum*0.1)).rgba;
+	float3 a = float3(col.r, col.r, col.r);
+	float3 g = col.ggg;
+	float3 b = 1-float3(col.b, col.b, col.b);
+
 
 	float3 final = col;
-	float alpha = noiser * noiseg * noiseb;
+
+//float3 noise
+
+	float alpha = sum * col.a;
+
 	if (alpha > 0.5) alpha = 1;
 	else alpha = 0;
 
-	return float4(col, alpha);
+	if (a.r > 0.5) a.r = 1;
+	else a.r = 0;
+
+	if (g.g > 0.5) g.g = 1;
+	else g.g = 0;
+
+	if (b.b > 0.5) b.b = 1;
+	else b.b = 0;
+
+	float3 c = lerp(float3(0.1, 0.9, 0.9), float3(0.9, 0.9, 0.9), g.g);
+
+	return float4(c, alpha);
 }
