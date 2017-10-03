@@ -75,9 +75,20 @@ void GS(point VSIn inp[1], inout TriangleStream<GSOut> outstream)
 }
 
 Texture2D Plane : register(t0);
+Texture2D Noise : register(t1);
 SamplerState Sampler : register(s1);
 
 float4 PS(GSOut input) : SV_Target0
 {
-	return float4(Plane.Sample(Sampler, input.uv+float2(0, input.age*0.1)).xyz, 1);
+	float3 noiser = Noise.Sample(Sampler, input.uv + float2(0, input.age*0.1)).r;
+	float3 noiseg = Noise.Sample(Sampler, input.uv + float2(0, input.age*0.2)).g;
+	float3 noiseb = Noise.Sample(Sampler, input.uv + float2(0, input.age*0.4)).b;
+	float3 col = Plane.Sample(Sampler, input.uv + float2(sin(input.age)*0.1, input.age*0.4)).rgb;
+
+	float3 final = col;
+	float alpha = noiser * noiseg * noiseb;
+	if (alpha > 0.5) alpha = 1;
+	else alpha = 0;
+
+	return float4(col, alpha);
 }

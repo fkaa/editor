@@ -183,7 +183,7 @@ public:
 		viewport.Height = m_RenderSize.y;
 		viewport.MaxDepth = 1.f;
 
-		cxt->OMSetBlendState(m_States->Opaque(), nullptr, 0xFFFFFFFF);
+		cxt->OMSetBlendState(m_States->AlphaBlend(), nullptr, 0xFFFFFFFF);
 		cxt->OMSetDepthStencilState(m_States->DepthNone(), 0);
 		cxt->RSSetState(m_States->CullNone());
 		cxt->RSSetViewports(1, &viewport);
@@ -231,6 +231,7 @@ public:
 			SRVs[i] = mat.m_SRV;
 		}
 		cxt->PSSetShaderResources(0, MAX_MATERIAL_TEXTURES, SRVs);
+		cxt->OMSetBlendState(m_States->AlphaBlend(), nullptr, 0xFFFFFFFF);
 
 		if (Editor::SelectedEffect) {
 			FXSystem->ProcessFX(Editor::SelectedEffect, XMMatrixTranslation(0, 0, 0), 1.f);

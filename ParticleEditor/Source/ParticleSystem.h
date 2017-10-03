@@ -43,6 +43,7 @@ public:
 
 	VertexBuffer<BillboardParticle> *m_BillboardBuffer;
 
+	ID3D11BlendState *m_ParticleBlend;
 	ID3D11InputLayout *m_DefaultBillboardLayout;
 	ID3D11VertexShader *m_DefaultBillboardVS;
 	ID3D11GeometryShader *m_DefaultBillboardGS;
