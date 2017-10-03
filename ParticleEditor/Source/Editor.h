@@ -17,6 +17,7 @@ struct MaterialTexture {
 namespace Editor {;
 
 enum class AttributeType {
+	None,
 	Effect,
 	Trail,
 	Billboard,

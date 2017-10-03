@@ -111,6 +111,20 @@ public:
 
 };
 
+void MaterialCombo(int *idx)
+{
+	std::vector<const char *> names;
+	for (int i = 0; i < MAX_TRAIL_MATERIALS; i++) {
+		TrailParticleMaterial &mat = Editor::TrailMaterials[i];
+		if (mat.m_MaterialName.empty())
+			continue;
+
+		names.push_back(mat.m_MaterialName.c_str());
+	}
+
+	ImGui::Combo("Material", idx, (const char**)names.data(), names.size());
+}
+
 class AttributeEditor : public ImwWindow {
 public:
 	AttributeEditor()
@@ -123,14 +137,42 @@ public:
 		switch (Editor::SelectedObject.type) {
 			case Editor::AttributeType::Texture: {
 				MaterialTexture &tex = Editor::MaterialTextures[Editor::SelectedObject.index];
-				ImGui::Text("%s", tex.m_TextureName.c_str());
+				ImGui::Text("Texture");
+
 				if (tex.m_SRV)
 					ImGui::Image(tex.m_SRV, ImVec2(64, 64));
+
 				tex.m_TextureName.resize(128, '\0');
 				ImGui::InputText("Name", (char*)tex.m_TextureName.data(), 120);
-
+				tex.m_TexturePath.resize(128, '\0');
+				ImGui::InputText("Path", (char*)tex.m_TexturePath.data(), 120);
 
 			} break;
+			case Editor::AttributeType::Material: {
+				TrailParticleMaterial &mat = Editor::TrailMaterials[Editor::SelectedObject.index];
+				ImGui::Text("Material");
+
+				mat.m_MaterialName.resize(128, '\0');
+				ImGui::InputText("Name", (char*)mat.m_MaterialName.data(), 120);
+				mat.m_ShaderPath.resize(128, '\0');
+				ImGui::InputText("Path", (char*)mat.m_ShaderPath.data(), 120);
+
+			} break;
+			case Editor::AttributeType::Billboard: {
+				BillboardParticleDefinition &def = Editor::BillboardDefinitions[Editor::SelectedObject.index];
+				ImGui::Text("Billboard");
+
+				def.name.resize(128, '\0');
+				ImGui::InputText("Name", (char*)def.name.data(), 120);
+
+				int idx = def.m_Material - Editor::TrailMaterials;
+				MaterialCombo(&idx);
+
+				def.m_Material = &Editor::TrailMaterials[idx];
+			} break;
+			case Editor::AttributeType::None:
+				ImGui::Text("No selection");
+				break;
 		}
 	}
 };
