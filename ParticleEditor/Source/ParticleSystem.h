@@ -36,7 +36,7 @@ public:
 	ParticleEffect GetFX(std::string name);
 
 	void update(Camera *cam, float dt);
-	void render(Camera *cam, CommonStates *states, ID3D11RenderTargetView *dst_rtv);
+	void render(Camera *cam, CommonStates *states, ID3D11DepthStencilView *dst_dsv, ID3D11RenderTargetView *dst_rtv);
 	void frame();
 
 	void ReadSphereModel();

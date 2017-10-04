@@ -21,7 +21,7 @@ struct Vertex {
 class SkySphere {
 public:
 	SkySphere(ID3D11Device *device) {
-		std::ifstream meshfile("Resources/Mesh/dome.dat", std::ifstream::in | std::ifstream::binary);
+		std::ifstream meshfile("Resources/Mesh/sphere.dat", std::ifstream::in | std::ifstream::binary);
 		if (!meshfile.is_open())
 			throw "Can't load sky dome mesh";
 
@@ -126,6 +126,11 @@ public:
 			m_BatchLayout = create_input_layout(VertexPositionColor::InputElements, VertexPositionColor::InputElementCount, bytecode, len, device);
 		}
 
+		{
+			auto display = ImGui::GetIO().DisplaySize;
+			OnResize(display.x, display.y);
+		}
+
 		FXSystem = new ParticleSystem(L"", 2048, 0, 0, device, cxt);
 	}
 
@@ -138,9 +143,30 @@ public:
 
 	void OnResize(int width, int height)
 	{
-		auto lo = min(width, height);
-		auto hi = max(width, height);
-		m_Camera->SetProjection(XMMatrixPerspectiveFovRH(45.f, float(hi) / float(lo), 0.1f, 100.f));
+
+
+		if (m_DepthDSV)
+			m_DepthDSV->Release();
+
+		ID3D11Texture2D *texture;
+		{
+			D3D11_TEXTURE2D_DESC desc = {};
+			desc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+			desc.Format = DXGI_FORMAT_R32_TYPELESS;
+			desc.Width = width;
+			desc.Height = height;
+			desc.MipLevels = 1;
+			desc.ArraySize = 1;
+			desc.SampleDesc.Count = 1;
+			DXCALL(device->CreateTexture2D(&desc, nullptr, &texture));
+		}
+
+		D3D11_DEPTH_STENCIL_VIEW_DESC desc = {};
+		desc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+		desc.Format = DXGI_FORMAT_D32_FLOAT;
+		DXCALL(device->CreateDepthStencilView(texture, &desc, &m_DepthDSV));
+
+		texture->Release();
 	}
 
 	virtual bool IsCustomRendered() override
@@ -153,24 +179,29 @@ public:
 		auto min = GetLastPosition();
 		auto max = GetLastSize();
 		auto size = max;
+		auto lo = min(size.x, size.y);
+		auto hi = max(size.x, size.y);
 
+		m_Camera->SetProjection(XMMatrixPerspectiveFovRH(45.f, float(hi) / float(lo), 0.1f, 100.f));
+		
 		// temp
-		OnResize(size.x, size.y);
+		//OnResize(size.x, size.y);
 		m_RenderSize = size;
 
 		// if current frame's viewport size differs from previous frame, we need to
 		// recreate our resources
-		if ((int)size.x != (int)m_RenderSize.x &&
-			(int)size.y != (int)m_RenderSize.y)
+		auto display = ImGui::GetIO().DisplaySize;
+		if ((int)display.x != (int)m_DisplaySize.x &&
+			(int)display.y != (int)m_DisplaySize.y)
 		{
-			m_Dirty = true;
+			OnResize(display.x, display.y);
+			m_DisplaySize = display;
 		}
 
 
 		// if need to refresh and we dont have lmb down (resizing), recreate
 		// resources dependent on viewport size
 		if (m_Dirty) {
-			OnResize(size.x, size.y);
 
 			m_RenderSize = size;
 			m_Dirty = false;
@@ -185,6 +216,7 @@ public:
 
 		cxt->OMSetBlendState(m_States->AlphaBlend(), nullptr, 0xFFFFFFFF);
 		cxt->OMSetDepthStencilState(m_States->DepthNone(), 0);
+		cxt->OMSetRenderTargets(1, &ImwPlatformWindowDX11::s_pRTV, nullptr);
 		cxt->RSSetState(m_States->CullNone());
 		cxt->RSSetViewports(1, &viewport);
 
@@ -237,8 +269,11 @@ public:
 		if (Editor::SelectedEffect) {
 			FXSystem->ProcessFX(Editor::SelectedEffect, XMMatrixTranslation(0, 0, 0), 1.f);
 		}
+
+		cxt->ClearDepthStencilView(m_DepthDSV, D3D11_CLEAR_DEPTH, 1.f, 0);
+
 		FXSystem->update(m_Camera, 1.f);
-		FXSystem->render(m_Camera, m_States, nullptr);
+		FXSystem->render(m_Camera, m_States, m_DepthDSV, ImwPlatformWindowDX11::s_pRTV);
 		FXSystem->frame();
 	}
 
@@ -248,6 +283,7 @@ private:
 
 	Camera *m_Camera;
 
+	ID3D11DepthStencilView *m_DepthDSV;
 	ID3D11InputLayout *m_BatchLayout;
 	PrimitiveBatch<VertexPositionColor> *m_Batch;
 	BasicEffect *m_Effect;
@@ -256,5 +292,6 @@ private:
 	SkySphere m_Sphere;
 
 	ImVec2 m_RenderSize;
+	ImVec2 m_DisplaySize;
 	bool m_Dirty;
 };

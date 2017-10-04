@@ -151,7 +151,7 @@ void ParticleSystem::frame()
 
 void ParticleSystem::ReadSphereModel()
 {
-	std::ifstream meshfile("Resources/Mesh/dome.dat", std::ifstream::in | std::ifstream::binary);
+	std::ifstream meshfile("Resources/Mesh/sphere.dat", std::ifstream::in | std::ifstream::binary);
 	if (!meshfile.is_open())
 		throw "Can't load sky dome mesh";
 
@@ -201,7 +201,7 @@ void ParticleSystem::ReadSphereModel()
 
 }
 
-void ParticleSystem::render(Camera *cam, CommonStates *states, ID3D11RenderTargetView *dst_rtv)
+void ParticleSystem::render(Camera *cam, CommonStates *states, ID3D11DepthStencilView *dst_dsv, ID3D11RenderTargetView *dst_rtv)
 {
 
 	ID3D11SamplerState *samplers[] = {
@@ -242,6 +242,7 @@ void ParticleSystem::render(Camera *cam, CommonStates *states, ID3D11RenderTarge
 		cxt->VSSetConstantBuffers(0, 1, *cam->GetBuffer());
 
 		cxt->OMSetDepthStencilState(states->DepthDefault(), 0);
+		cxt->OMSetRenderTargets(1, &dst_rtv, dst_dsv);
 		cxt->RSSetState(states->CullClockwise());
 
 		for (int i = 0; i < m_GeometryParticles.size(); i++) {
@@ -265,7 +266,8 @@ void ParticleSystem::render(Camera *cam, CommonStates *states, ID3D11RenderTarge
 		cxt->GSSetShader(m_DefaultBillboardGS, nullptr, 0);
 		cxt->GSSetConstantBuffers(0, 1, *cam->GetBuffer());
 
-		cxt->OMSetDepthStencilState(states->DepthNone(), 0);
+		cxt->OMSetDepthStencilState(states->DepthRead(), 0);
+		cxt->OMSetRenderTargets(1, &dst_rtv, nullptr);
 
 		for (int i = 0; i < m_BillboardParticles.size(); i++) {
 			cxt->PSSetShader(Editor::TrailMaterials[m_BillboardParticles[i].idx].m_PixelShader, nullptr, 0);
