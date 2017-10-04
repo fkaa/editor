@@ -230,6 +230,7 @@ public:
 			auto &mat = Editor::MaterialTextures[i];
 			SRVs[i] = mat.m_SRV;
 		}
+		cxt->VSSetShaderResources(0, MAX_MATERIAL_TEXTURES, SRVs);
 		cxt->PSSetShaderResources(0, MAX_MATERIAL_TEXTURES, SRVs);
 		cxt->OMSetBlendState(m_States->AlphaBlend(), nullptr, 0xFFFFFFFF);
 

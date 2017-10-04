@@ -25,6 +25,11 @@
 
 #include <External/json.hpp>
 
+#define GEOMETRY_ICON ICON_MD_FILTER_HDR
+#define BILLBOARD_ICON ICON_MD_CROP_FREE
+#define TRAIL_ICON ICON_MD_GRAIN
+#define FX_ICON ICON_MD_PHOTO_FILTER
+
 using json = nlohmann::json;
 
 inline float RandomFloat(float lo, float hi)
@@ -74,7 +79,7 @@ public:
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.420, 0.482, 0.082, 1.0f));
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.576, 0.647, 0.216, 1.0f));
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.741, 0.808, 0.404, 1.0f));
-		ImGui::Button(ICON_MD_PHOTO_FILTER " [FX]");
+		ImGui::Button(FX_ICON " [FX]");
 		if (ImGui::IsItemHovered())
 			ImGui::SetTooltip("Create new Particle FX");
 		ImGui::PopStyleColor(3);
@@ -83,17 +88,17 @@ public:
 		ImGui::TextDisabled("|");
 
 		ImGui::SameLine();
-		ImGui::Button(ICON_MD_GRAIN " [Trail]");
+		ImGui::Button(TRAIL_ICON " [Trail]");
 		if (ImGui::IsItemHovered())
 			ImGui::SetTooltip("Create new Particle Trail");
 
 		ImGui::SameLine();
-		ImGui::Button(ICON_MD_CROP_FREE " [Billboard]");
+		ImGui::Button(BILLBOARD_ICON " [Billboard]");
 		if (ImGui::IsItemHovered())
 			ImGui::SetTooltip("Create new Billboard Particle");
 
 		ImGui::SameLine();
-		ImGui::Button(ICON_MD_FILTER_HDR " [Geometry]");
+		ImGui::Button(GEOMETRY_ICON " [Geometry]");
 		if (ImGui::IsItemHovered())
 			ImGui::SetTooltip("Create new Geometry Particle");
 
@@ -316,17 +321,22 @@ public:
 			auto &fx = Editor::EffectDefinitions[i];
 			
 			char label[128];
-			sprintf(label, ICON_MD_PHOTO_FILTER " %s [%d]", fx.name, fx.m_Count);
+			sprintf(label, FX_ICON " %s (%d)", fx.name, fx.m_Count);
 			bool node = ImGui::TreeNode(label);
 			
 			ImGui::SameLine();
 			
 			if (ImGui::Button(ICON_MD_PLAY_ARROW)) {
+				Editor::SelectedEffect = &Editor::EffectDefinitions[i];
+			}
+			
+			ImGui::SameLine();
+
+			if (ImGui::Button(ICON_MD_ZOOM_IN)) {
 				Editor::SelectedObject = Editor::AttributeObject{
 					Editor::AttributeType::Effect,
 					i
 				};
-				Editor::SelectedEffect = &Editor::EffectDefinitions[i];
 			}
 
 			if (node) {
@@ -336,11 +346,21 @@ public:
 					switch (entry.type) {
 						case ParticleType::Billboard: {
 							auto def = entry.billboard;
-							sprintf(label, ICON_MD_CROP_FREE " %s", def->name.c_str());
+							sprintf(label, BILLBOARD_ICON " %s", def->name.c_str());
 							if (ImGui::Selectable(label, selected == j)) {
 								Editor::SelectedObject = {
 									Editor::AttributeType::Billboard,
 									(int)(def - Editor::BillboardDefinitions)
+								};
+							}
+						} break;
+						case ParticleType::Geometry: {
+							auto def = entry.geometry;
+							sprintf(label, GEOMETRY_ICON " %s", def->name.c_str());
+							if (ImGui::Selectable(label, selected == j)) {
+								Editor::SelectedObject = {
+									Editor::AttributeType::Geometry,
+									(int)(def - Editor::GeometryDefinitions)
 								};
 							}
 						} break;
@@ -369,6 +389,7 @@ AttributeObject SelectedObject;
 MaterialTexture MaterialTextures[MAX_MATERIAL_TEXTURES];
 TrailParticleMaterial TrailMaterials[MAX_TRAIL_MATERIALS];
 BillboardParticleDefinition BillboardDefinitions[MAX_BILLBOARD_PARTICLE_DEFINITIONS];
+GeometryParticleDefinition GeometryDefinitions[MAX_BILLBOARD_PARTICLE_DEFINITIONS];
 
 std::vector<ParticleEffect> EffectDefinitions;
 
@@ -382,6 +403,17 @@ BillboardParticleDefinition *GetBillboardDef(std::string name)
 		auto &def = BillboardDefinitions[i];
 		if (def.name == name)
 			return &BillboardDefinitions[i];
+	}
+
+	return nullptr;
+}
+
+GeometryParticleDefinition *GetGeometryDef(std::string name)
+{
+	for (int i = 0; i < MAX_BILLBOARD_PARTICLE_DEFINITIONS; i++) {
+		auto &def = GeometryDefinitions[i];
+		if (def.name == name)
+			return &GeometryDefinitions[i];
 	}
 
 	return nullptr;
@@ -519,6 +551,18 @@ void Load()
 		*bd++ = def;
 	}
 
+	auto gdefs = data.at("geometry_definitions");
+	auto gd = GeometryDefinitions;
+	for (auto entry : gdefs) {
+		GeometryParticleDefinition def = {};
+		std::string n = entry["name"];
+		def.name = n;
+		def.m_Material = GetMaterial(entry["material_name"]);
+		def.lifetime = entry["lifetime"];
+		*gd++ = def;
+	}
+
+
 	auto effects = data.at("fx");
 	for (auto entry : effects) {
 		
@@ -537,6 +581,9 @@ void Load()
 			switch (type) {
 				case ParticleType::Billboard:
 					ent.billboard = GetBillboardDef(name);
+					break;
+				case ParticleType::Geometry:
+					ent.geometry = GetGeometryDef(name);
 					break;
 			}
 
@@ -657,7 +704,7 @@ void Run()
 	EffectDefinitions.push_back(fx);*/
 
 	Load();
-	Save();
+	//Save();
 
 
 	ImWindow::ImwWindowManagerDX11 manager;

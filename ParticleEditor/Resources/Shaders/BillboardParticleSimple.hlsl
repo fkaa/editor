@@ -84,42 +84,34 @@ SamplerState SamplerClamp : register(s0);
 
 float4 PS(GSOut input) : SV_Target0
 {
-	float noiser = Noise.Sample(Sampler, input.uv + float2(0, input.age*0.2)).r;
-	float noiseg = Noise.Sample(Sampler, input.uv + float2(0, input.age*0.11)).g;
-	//float3 noiseb = Noise.Sample(Sampler, input.uv + float2(0, input.age*0.4)).b;
+	float4 mask = Mask.Sample(Sampler, input.uv);
+	float t = input.age * 0.05;
 
-	float rg = noiser + noiseg;
+	float4 noise1 = Noise.Sample(Sampler, 0.25*input.uv+t*float2(0, 0.5));
+	float4 noise2 = Noise.Sample(Sampler, 0.15*input.uv+t*float2(0, 1));
 
-	float maskg = Mask.Sample(Sampler, input.uv).a;
-
-	float sum = rg * maskg * (input.uv.y);
-
+	float distort = pow(noise1.r + noise2.g, 4);
+	float falloff = input.uv.y;
 	
-	float4 col = Mask.Sample(SamplerClamp, input.uv + float2(0, sum*0.1)).rgba;
-	float3 a = float3(col.r, col.r, col.r);
-	float3 g = col.ggg;
-	float3 b = 1-float3(col.b, col.b, col.b);
+	float bsize = 3.f;
+
+	float N = ((mask.b*bsize) + ((3.9*distort * mask.r) * (mask.g * falloff))) * falloff;
+	clip(saturate(step(0.5 + input.uv.y, N)) - 0.5);
+
+	float innerFactor = step(1.9, N * pow(mask.g * falloff, 1));
+	float outerFactor = 1 - innerFactor;
+
+	float3 inner = float3(1.000, 0.894, 0.710);
+	float3 innerEnd = float3(0.902, 0.902, 0.980);
 
 
-	float3 final = col;
+	float3 outer = float3(1.000, 0.549, 0.000);
+	float3 outerEnd = float3(1.000, 0.647, 0.000);
 
-//float3 noise
+	float3 emissive = ((innerFactor * lerp(inner, innerEnd, falloff - 0.49)) + (outerFactor * lerp(outerEnd, outer, falloff-0.7)));
 
-	float alpha = sum * col.a;
 
-	if (alpha > 0.5) alpha = 1;
-	else alpha = 0;
-
-	if (a.r > 0.5) a.r = 1;
-	else a.r = 0;
-
-	if (g.g > 0.5) g.g = 1;
-	else g.g = 0;
-
-	if (b.b > 0.5) b.b = 1;
-	else b.b = 0;
-
-	float3 c = lerp(float3(0.1, 0.9, 0.9), float3(0.9, 0.9, 0.9), g.g);
-
-	return float4(c, alpha);
+	return float4(emissive, 1);
 }
+
+

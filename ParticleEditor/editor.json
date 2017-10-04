@@ -6,6 +6,13 @@
             "name": "DefaultBillboard"
         }
     ],
+    "geometry_definitions": [
+        {
+            "lifetime": -1.0,
+            "material_name": "DefaultGeometry",
+            "name": "DefaultGeometry"
+        }
+    ],
     "fx": [
         {
             "entries": [
@@ -15,12 +22,25 @@
                 }
             ],
             "name": "Untitled"
+        },
+        {
+            "entries": [
+                {
+                    "name": "DefaultGeometry",
+                    "type": "geometry"
+                }
+            ],
+            "name": "GeometryTest"
         }
     ],
     "materials": [
         {
             "name": "Default",
             "path": "Resources/Shaders/BillboardParticleSimple.hlsl"
+        },
+        {
+            "name": "DefaultGeometry",
+            "path": "Resources/Shaders/GeometryParticleSimple.hlsl"
         }
     ],
     "textures": [
@@ -30,11 +50,15 @@
         },
         {
             "name": "Noise",
-            "path": "Resources/Textures/Noise.png"
+            "path": "Resources/Textures/Noise2.png"
         },
         {
             "name": "Mask",
-            "path": "Resources/Textures/Noise.png"
+            "path": "Resources/Textures/Mask.png"
+        },
+        {
+            "name": "Sphere",
+            "path": "Resources/Textures/Sphere.png"
         }
     ]
 }

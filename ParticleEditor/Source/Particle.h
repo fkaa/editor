@@ -70,6 +70,17 @@ enum class TrailParticleEnvironment {
 
 
 struct GeometryParticleDefinition {
+	std::string name;
+	TrailParticleMaterial *m_Material;
+	PosBox m_StartPosition;
+	VelocityBox m_StartVelocity;
+	VelocityBox m_Gravity;
+	VelocityBox m_TurbulenceStart;
+	VelocityBox m_TurbuldsenceEnd;
+	SimpleMath::Vector2 m_SizeStart;
+	SimpleMath::Vector2 m_SizeEnd;
+	float lifetime;
+
 	int m_ModelID;
 };
 
@@ -122,6 +133,12 @@ struct ParticleEffect {
 struct BillboardParticle {
 	XMFLOAT3 position;
 	XMFLOAT2 size;
+	float age;
+	int idx;
+};
+
+struct GeometryParticle {
+	XMMATRIX model;
 	float age;
 	int idx;
 };
