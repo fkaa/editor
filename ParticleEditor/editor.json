@@ -6,43 +6,63 @@
             "name": "DefaultBillboard"
         }
     ],
-    "geometry_definitions": [
+  "geometry_definitions": [
+    {
+      "lifetime": -1.0,
+      "material_name": "DefaultGeometry",
+      "name": "CubeSphere"
+    }
+  ],
+   "trail_definitions": [
         {
             "lifetime": -1.0,
-            "material_name": "DefaultGeometry",
-            "name": "DefaultGeometry"
+            "material_name": "trailMaterial",
+            "name": "Trail"
         }
     ],
-    "fx": [
+  "fx": [
+    {
+      "entries": [
         {
-            "entries": [
-                {
-                    "name": "DefaultBillboard",
-                    "type": "billboard"
-                }
-            ],
-            "name": "Untitled"
-        },
-        {
-            "entries": [
-                {
-                    "name": "DefaultGeometry",
-                    "type": "geometry"
-                }
-            ],
-            "name": "GeometryTest"
+          "name": "DefaultBillboard",
+          "type": "billboard"
         }
-    ],
-    "materials": [
+      ],
+      "name": "Billboard"
+    },
+    {
+      "entries": [
         {
-            "name": "Default",
-            "path": "Resources/Shaders/BillboardParticleSimple.hlsl"
-        },
-        {
-            "name": "DefaultGeometry",
-            "path": "Resources/Shaders/GeometryParticleSimple.hlsl"
+          "name": "CubeSphere",
+          "type": "geometry"
         }
-    ],
+      ],
+      "name": "Smoke"
+    },
+    {
+      "entries": [
+        {
+          "name": "Trail",
+          "type": "trail"
+        }
+      ],
+      "name": "Trail"
+    }
+  ],
+  "materials": [
+    {
+      "name": "Default",
+      "path": "Resources/Shaders/BillboardParticleSimple.hlsl"
+    },
+    {
+      "name": "DefaultGeometry",
+      "path": "Resources/Shaders/GeometryParticleSimple.hlsl"
+    },
+    {
+      "name": "trailMaterial",
+      "path": "Resources/Shaders/TrailParticleSimple.hlsl"
+    }
+  ],
     "textures": [
         {
             "name": "DefaultChecker",

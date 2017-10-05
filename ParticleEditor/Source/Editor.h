@@ -40,6 +40,7 @@ extern MaterialTexture MaterialTextures[MAX_MATERIAL_TEXTURES];
 extern TrailParticleMaterial TrailMaterials[MAX_TRAIL_MATERIALS];
 extern BillboardParticleDefinition BillboardDefinitions[MAX_BILLBOARD_PARTICLE_DEFINITIONS];
 extern GeometryParticleDefinition GeometryDefinitions[MAX_BILLBOARD_PARTICLE_DEFINITIONS];
+extern TrailParticleDefinition TrailDefinitions[MAX_BILLBOARD_PARTICLE_DEFINITIONS];
 
 extern std::vector<ParticleEffect> EffectDefinitions;
 
@@ -47,6 +48,8 @@ extern ParticleEffect *SelectedEffect;
 
 BillboardParticleDefinition *GetBillboardDef(std::string name);
 GeometryParticleDefinition *GetGeometryDef(std::string name);
+TrailParticleDefinition *GetTrailDef(std::string name);
+
 TrailParticleMaterial *GetMaterial(std::string name);
 
 void Reload(ID3D11Device *device);

@@ -14,7 +14,8 @@ using namespace DirectX;
 
 
 
-
+#define TRAIL_COUNT 32
+#define TRAIL_PARTICLE_COUNT 16
 
 
 using ParticleShaderID = uint64_t;
@@ -36,7 +37,9 @@ struct TrailParticleMaterial {
 };
 
 struct TrailParticleDefinition {
-	TrailParticleMaterial m_Material;
+	std::string name;
+
+	TrailParticleMaterial * m_Material;
 	PosBox m_StartPosition;
 	VelocityBox m_StartVelocity;
 	VelocityBox m_Gravity;
@@ -58,8 +61,10 @@ struct TrailParticle {
 };
 
 
-using Trail = TrailParticle[16];
-
+struct Trail {
+	TrailParticle points[TRAIL_COUNT];
+	int idx;
+};
 
 
 enum class TrailParticleEnvironment {

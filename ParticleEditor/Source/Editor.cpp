@@ -364,6 +364,16 @@ public:
 								};
 							}
 						} break;
+						case ParticleType::Trail: {
+							auto def = entry.trail;
+							sprintf(label, TRAIL_ICON " %s", def->name.c_str());
+							if (ImGui::Selectable(label, selected == j)) {
+								Editor::SelectedObject = {
+									Editor::AttributeType::Trail,
+									(int)(def - Editor::TrailDefinitions)
+								};
+							}
+						} break;
 					}
 				}
 				ImGui::TreePop();
@@ -390,6 +400,7 @@ MaterialTexture MaterialTextures[MAX_MATERIAL_TEXTURES];
 TrailParticleMaterial TrailMaterials[MAX_TRAIL_MATERIALS];
 BillboardParticleDefinition BillboardDefinitions[MAX_BILLBOARD_PARTICLE_DEFINITIONS];
 GeometryParticleDefinition GeometryDefinitions[MAX_BILLBOARD_PARTICLE_DEFINITIONS];
+TrailParticleDefinition TrailDefinitions[MAX_BILLBOARD_PARTICLE_DEFINITIONS];
 
 std::vector<ParticleEffect> EffectDefinitions;
 
@@ -414,6 +425,17 @@ GeometryParticleDefinition *GetGeometryDef(std::string name)
 		auto &def = GeometryDefinitions[i];
 		if (def.name == name)
 			return &GeometryDefinitions[i];
+	}
+
+	return nullptr;
+}
+
+TrailParticleDefinition * GetTrailDef(std::string name)
+{
+	for (int i = 0; i < MAX_BILLBOARD_PARTICLE_DEFINITIONS; i++) {
+		auto &def = TrailDefinitions[i];
+		if (def.name == name)
+			return &TrailDefinitions[i];
 	}
 
 	return nullptr;
@@ -563,6 +585,17 @@ void Load()
 	}
 
 
+	auto tdefs = data.at("trail_definitions");
+	auto td = TrailDefinitions;
+	for (auto entry :tdefs) {
+		TrailParticleDefinition def = {};
+		std::string n = entry["name"];
+		def.name = n;
+		def.m_Material = GetMaterial(entry["material_name"]);
+		//def.lifetime = entry["lifetime"];
+		*td++ = def;
+	}
+
 	auto effects = data.at("fx");
 	for (auto entry : effects) {
 		
@@ -584,6 +617,9 @@ void Load()
 					break;
 				case ParticleType::Geometry:
 					ent.geometry = GetGeometryDef(name);
+					break;
+				case ParticleType::Trail:
+					ent.trail = GetTrailDef(name);
 					break;
 			}
 

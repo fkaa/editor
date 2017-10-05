@@ -49,7 +49,23 @@ ParticleSystem::ParticleSystem(const wchar_t *file, UINT capacity, UINT width, U
 	m_BillboardParticles.reserve(capacity);
 	m_BillboardBuffer = new VertexBuffer<BillboardParticle>(device, BufferUsageDynamic, BufferAccessWrite, capacity);
 
+	m_TrailBuffer = new VertexBuffer<TrailParticle>(device, BufferUsageDynamic, BufferAccessWrite, TRAIL_COUNT * TRAIL_PARTICLE_COUNT);
+	m_TrailParticles.push_back({});
 
+	blob = compile_shader(L"Resources/Shaders/TrailParticleSimple.hlsl", "VS", "vs_5_0", device);
+	DXCALL(device->CreateVertexShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, &trail_vs));
+
+	D3D11_INPUT_ELEMENT_DESC input_desc[] = {
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "SIZE", 0, DXGI_FORMAT_R32G32_FLOAT,        0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+	};
+	trail_layout = create_input_layout(input_desc, ARRAYSIZE(input_desc), blob->GetBufferPointer(), blob->GetBufferSize(), device);
+
+	blob = compile_shader(L"Resources/Shaders/TrailParticleSimple.hlsl", "GS", "gs_5_0", device);
+	DXCALL(device->CreateGeometryShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, &trail_gs));
+
+	blob = compile_shader(L"Resources/Shaders/TrailParticleSimple.hlsl", "PS", "ps_5_0", device);
+	DXCALL(device->CreatePixelShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, &trail_ps));
 
 	ReadSphereModel();
 
@@ -94,6 +110,31 @@ void ParticleSystem::ProcessFX(ParticleEffect *fx, XMMATRIX model, float dt)
 			};
 
 			m_GeometryParticles.push_back(particle);
+		} break;
+		case ParticleType::Trail: {
+			auto def = *entry.trail;
+
+			auto particles = m_TrailParticles[0].points;
+			m_TrailParticles[0].idx = (int)(def.m_Material - Editor::TrailMaterials);
+			if (fx->age >= 0.015) {
+				fx->age -= 0.015;
+				for (int i = TRAIL_COUNT - 2; i > 1; i--) {
+					//particles[i - 1].position = SimpleMath::Vector3::Lerp(particles[i].position, particles[i - 1].position, 0.9f);
+					particles[i] = particles[i - 1];
+				}
+				particles[1] = {
+					SimpleMath::Vector3(RandomFloat(-0.1, 0.1), 0, RandomFloat(-0.1, 0.1)),
+					SimpleMath::Vector2(0.3, 1.0)
+				};
+				particles[0] = particles[1];
+				particles[TRAIL_COUNT - 1] = particles[TRAIL_COUNT - 2];
+			}
+
+			for (int i = 1; i < TRAIL_COUNT - 1; i++) {
+				particles[i].m_Position += SimpleMath::Vector3(0, 0.11 * dt, 0);
+				particles[i].m_Size = SimpleMath::Vector2(0.1, 1.0);
+			}
+
 		} break;
 		}
 	}
@@ -140,6 +181,15 @@ void ParticleSystem::update(Camera *cam, float dt)
 			*ptr++ = particle;
 		}
 		m_GeometryInstanceBuffer->Unmap(cxt);
+	}
+
+	{
+		TrailParticle *ptr = m_TrailBuffer->Map(cxt);
+		for (auto particle : m_TrailParticles) {
+			memcpy(ptr, particle.points, TRAIL_COUNT * sizeof(TrailParticle));
+			ptr += TRAIL_COUNT * sizeof(TrailParticle);
+		}
+		m_TrailBuffer->Unmap(cxt);
 	}
 }
 
@@ -250,8 +300,28 @@ void ParticleSystem::render(Camera *cam, CommonStates *states, ID3D11DepthStenci
 			cxt->DrawIndexedInstanced(m_GeometryIndices, 1, 0, 0, i);
 		}
 	}
-	cxt->RSSetState(states->CullCounterClockwise());
 
+	cxt->RSSetState(states->CullCounterClockwise());
+	
+	//Trail
+	{
+		UINT stride = sizeof(TrailParticle);
+		UINT offset = 0;// 1 * sizeof(TrailParticle);
+
+		cxt->IASetVertexBuffers(0, 1, *m_TrailBuffer, &stride, &offset);
+		cxt->IASetInputLayout(trail_layout);
+		cxt->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP_ADJ);
+		cxt->VSSetShader(trail_vs, nullptr, 0);
+		cxt->GSSetShader(trail_gs, nullptr, 0);
+		cxt->PSSetShader(trail_ps, nullptr, 0);
+
+		for (int i = 0; i < m_TrailParticles.size(); i++) {
+			cxt->PSSetShader(Editor::TrailMaterials[m_TrailParticles[i].idx].m_PixelShader, nullptr, 0);
+			cxt->Draw(TRAIL_COUNT, i * TRAIL_COUNT);
+		}
+
+		cxt->GSSetShader(nullptr, nullptr, 0);
+	}
 
 	// billboards
 	{

@@ -49,12 +49,14 @@ public:
 	std::vector<ParticleEffectInstance> m_ParticleEffects;
 	std::vector<BillboardParticle> m_BillboardParticles;
 	std::vector<GeometryParticle> m_GeometryParticles;
+	std::vector<Trail> m_TrailParticles;
 
 	int m_GeometryIndices;
 	VertexBuffer<SphereVertex> *m_GeometryBuffer;
 	IndexBuffer<UINT16> *m_GeometryIndexBuffer;
 	VertexBuffer<GeometryParticle> *m_GeometryInstanceBuffer;
 	VertexBuffer<BillboardParticle> *m_BillboardBuffer;
+	VertexBuffer<TrailParticle> *m_TrailBuffer;
 
 	ID3D11BlendState *m_ParticleBlend;
 	ID3D11InputLayout *m_DefaultBillboardLayout;
@@ -64,6 +66,14 @@ public:
 	ID3D11VertexShader *m_DefaultGeometryVS;
 
 	ID3D11GeometryShader *m_DefaultBillboardGS;
+
+
+	ID3D11VertexShader   *trail_vs;
+	ID3D11GeometryShader *trail_gs;
+	ID3D11PixelShader    *trail_ps;
+	ID3D11InputLayout *trail_layout;
+
+
 	
 	ID3D11Device *device;
 	ID3D11DeviceContext *cxt;
