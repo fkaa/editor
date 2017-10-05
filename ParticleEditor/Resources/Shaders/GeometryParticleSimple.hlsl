@@ -12,8 +12,6 @@ struct VSIn {
 
 	// ib(1)
 	float4x4 model : MODEL;
-	float noiseScale : NOISE;
-	
 	float age : AGE;
 	int idx : IDX;
 };
