@@ -26,6 +26,7 @@ WNDCLASSEX								ImwPlatformWindowDX11::s_oWndClassEx;
 IDXGIFactory*							ImwPlatformWindowDX11::s_pFactory = NULL;
 ID3D11Device*							ImwPlatformWindowDX11::s_pDevice = NULL;
 ID3D11DeviceContext*					ImwPlatformWindowDX11::s_pDeviceContext = NULL;
+ID3D11RenderTargetView*					ImwPlatformWindowDX11::s_pRTV = NULL;
 
 ImwPlatformWindow*						ImwPlatformWindowDX11::s_pLastHoveredWindow = NULL;
 
@@ -118,17 +119,21 @@ bool ImwPlatformWindowDX11::Init(ImwPlatformWindow* pMain)
 	DXCALL(s_pFactory->MakeWindowAssociation(m_hWnd, DXGI_MWA_NO_ALT_ENTER ));
 
 
+	if (s_pRTV) {
+		s_pRTV->Release();
+		s_pRTV = NULL;
+	}
 	//Create our BackBuffer
 	ID3D11Texture2D* pBackBuffer;
 	DXCALL(m_pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&pBackBuffer));
 
 
 	//Create our Render Target
-	DXCALL(s_pDevice->CreateRenderTargetView(pBackBuffer, NULL, &m_pRenderTargetView));
+	DXCALL(s_pDevice->CreateRenderTargetView(pBackBuffer, NULL, &s_pRTV));
 	pBackBuffer->Release();
 
 	//Set our Render Target
-	s_pDeviceContext->OMSetRenderTargets(1, &m_pRenderTargetView, NULL);
+	s_pDeviceContext->OMSetRenderTargets(1, &s_pRTV, NULL);
 
 	SetState();
 	ImGui_ImplDX11_Init(m_hWnd, s_pDevice, s_pDeviceContext);
@@ -243,7 +248,7 @@ void ImwPlatformWindowDX11::PreUpdate()
 
 	if (NULL != m_pSwapChain) {
 		float bgColor[] = { 0.3f, 0.3f, 0.3f, 1.0f };
-		ImwIsSafe(s_pDeviceContext)->ClearRenderTargetView(m_pRenderTargetView, bgColor);
+		ImwIsSafe(s_pDeviceContext)->ClearRenderTargetView(s_pRTV, bgColor);
 	}
 }
 
@@ -271,7 +276,7 @@ void ImwPlatformWindowDX11::Render()
 	{
 
 
-		s_pDeviceContext->OMSetRenderTargets(1, &m_pRenderTargetView, NULL);
+		s_pDeviceContext->OMSetRenderTargets(1, &s_pRTV, NULL);
 
 
 		SetState();
@@ -383,7 +388,7 @@ LRESULT ImwPlatformWindowDX11::OnMessage(UINT message, WPARAM wParam, LPARAM lPa
 				s_pDeviceContext->OMSetRenderTargets(0, 0, 0);
 
 				// Release all outstanding references to the swap chain's buffers.
-				m_pRenderTargetView->Release();
+				s_pRTV->Release();
 
 				HRESULT hr;
 				// Preserve the existing buffer count and format.
@@ -399,11 +404,11 @@ LRESULT ImwPlatformWindowDX11::OnMessage(UINT message, WPARAM wParam, LPARAM lPa
 				hr = m_pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&pBuffer);
 				// Perform error handling here!
 
-				hr = s_pDevice->CreateRenderTargetView(pBuffer, NULL, &m_pRenderTargetView);
+				hr = s_pDevice->CreateRenderTargetView(pBuffer, NULL, &s_pRTV);
 				// Perform error handling here!
 				pBuffer->Release();
 
-				s_pDeviceContext->OMSetRenderTargets(1, &m_pRenderTargetView, NULL);
+				s_pDeviceContext->OMSetRenderTargets(1, &s_pRTV, NULL);
 
 				RECT oRect;
 				GetClientRect(m_hWnd, &oRect);

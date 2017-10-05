@@ -71,6 +71,8 @@ namespace ImWindow
 		static IDXGIFactory*				s_pFactory;
 		static ID3D11Device*				s_pDevice;
 		static ID3D11DeviceContext*			s_pDeviceContext;
+		static ID3D11RenderTargetView*		s_pRTV;
+
 		static ImwPlatformWindow*			s_pLastHoveredWindow;
 		static INT64						g_Time;
 		static INT64						g_TicksPerSecond;

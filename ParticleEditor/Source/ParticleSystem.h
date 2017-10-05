@@ -19,6 +19,12 @@ struct ParticleEffectInstance {
 	ParticleEffect effect;
 };
 
+struct SphereVertex {
+	XMFLOAT3 position;
+	XMFLOAT3 normal;
+	XMFLOAT2 uv;
+};
+
 class ParticleSystem {
 public:
 	ParticleSystem(const wchar_t *file, UINT capacity, UINT width, UINT height, ID3D11Device *device, ID3D11DeviceContext *cxt);
@@ -30,8 +36,10 @@ public:
 	ParticleEffect GetFX(std::string name);
 
 	void update(Camera *cam, float dt);
-	void render(Camera *cam, CommonStates *states, ID3D11RenderTargetView *dst_rtv);
+	void render(Camera *cam, CommonStates *states, ID3D11DepthStencilView *dst_dsv, ID3D11RenderTargetView *dst_rtv);
 	void frame();
+
+	void ReadSphereModel();
 
 //private:
 	UINT capacity;
@@ -40,12 +48,21 @@ public:
 
 	std::vector<ParticleEffectInstance> m_ParticleEffects;
 	std::vector<BillboardParticle> m_BillboardParticles;
+	std::vector<GeometryParticle> m_GeometryParticles;
 
+	int m_GeometryIndices;
+	VertexBuffer<SphereVertex> *m_GeometryBuffer;
+	IndexBuffer<UINT16> *m_GeometryIndexBuffer;
+	VertexBuffer<GeometryParticle> *m_GeometryInstanceBuffer;
 	VertexBuffer<BillboardParticle> *m_BillboardBuffer;
 
 	ID3D11BlendState *m_ParticleBlend;
 	ID3D11InputLayout *m_DefaultBillboardLayout;
 	ID3D11VertexShader *m_DefaultBillboardVS;
+
+	ID3D11InputLayout *m_DefaultGeometryLayout;
+	ID3D11VertexShader *m_DefaultGeometryVS;
+
 	ID3D11GeometryShader *m_DefaultBillboardGS;
 	
 	ID3D11Device *device;

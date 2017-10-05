@@ -25,6 +25,11 @@
 
 #include <External/json.hpp>
 
+#define GEOMETRY_ICON ICON_MD_FILTER_HDR
+#define BILLBOARD_ICON ICON_MD_CROP_FREE
+#define TRAIL_ICON ICON_MD_GRAIN
+#define FX_ICON ICON_MD_PHOTO_FILTER
+
 using json = nlohmann::json;
 
 inline float RandomFloat(float lo, float hi)
@@ -70,25 +75,30 @@ public:
 	virtual void OnToolBar() override
 	{
 		ImGui::BeginChild("Toolbar.main", ImVec2(0, ImGui::GetItemsLineHeightWithSpacing() + 10), true);
-		ImGui::Button(ICON_MD_PHOTO_FILTER " [FX]");
+		
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.420, 0.482, 0.082, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.576, 0.647, 0.216, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.741, 0.808, 0.404, 1.0f));
+		ImGui::Button(FX_ICON " [FX]");
 		if (ImGui::IsItemHovered())
 			ImGui::SetTooltip("Create new Particle FX");
+		ImGui::PopStyleColor(3);
 
 		ImGui::SameLine();
 		ImGui::TextDisabled("|");
 
 		ImGui::SameLine();
-		ImGui::Button(ICON_MD_GRAIN " [Trail]");
+		ImGui::Button(TRAIL_ICON " [Trail]");
 		if (ImGui::IsItemHovered())
 			ImGui::SetTooltip("Create new Particle Trail");
 
 		ImGui::SameLine();
-		ImGui::Button(ICON_MD_CROP_FREE " [Billboard]");
+		ImGui::Button(BILLBOARD_ICON " [Billboard]");
 		if (ImGui::IsItemHovered())
 			ImGui::SetTooltip("Create new Billboard Particle");
 
 		ImGui::SameLine();
-		ImGui::Button(ICON_MD_FILTER_HDR " [Geometry]");
+		ImGui::Button(GEOMETRY_ICON " [Geometry]");
 		if (ImGui::IsItemHovered())
 			ImGui::SetTooltip("Create new Geometry Particle");
 
@@ -111,6 +121,20 @@ public:
 
 };
 
+void MaterialCombo(int *idx)
+{
+	std::vector<const char *> names;
+	for (int i = 0; i < MAX_TRAIL_MATERIALS; i++) {
+		TrailParticleMaterial &mat = Editor::TrailMaterials[i];
+		if (mat.m_MaterialName.empty())
+			continue;
+
+		names.push_back(mat.m_MaterialName.c_str());
+	}
+
+	ImGui::Combo("Material", idx, (const char**)names.data(), names.size());
+}
+
 class AttributeEditor : public ImwWindow {
 public:
 	AttributeEditor()
@@ -123,14 +147,42 @@ public:
 		switch (Editor::SelectedObject.type) {
 			case Editor::AttributeType::Texture: {
 				MaterialTexture &tex = Editor::MaterialTextures[Editor::SelectedObject.index];
-				ImGui::Text("%s", tex.m_TextureName.c_str());
+				ImGui::Text("Texture");
+
 				if (tex.m_SRV)
-					ImGui::Image(tex.m_SRV, ImVec2(64, 64));
+					ImGui::Image(tex.m_SRV, ImVec2(128, 128));
+
 				tex.m_TextureName.resize(128, '\0');
 				ImGui::InputText("Name", (char*)tex.m_TextureName.data(), 120);
-
+				tex.m_TexturePath.resize(128, '\0');
+				ImGui::InputText("Path", (char*)tex.m_TexturePath.data(), 120);
 
 			} break;
+			case Editor::AttributeType::Material: {
+				TrailParticleMaterial &mat = Editor::TrailMaterials[Editor::SelectedObject.index];
+				ImGui::Text("Material");
+
+				mat.m_MaterialName.resize(128, '\0');
+				ImGui::InputText("Name", (char*)mat.m_MaterialName.data(), 120);
+				mat.m_ShaderPath.resize(128, '\0');
+				ImGui::InputText("Path", (char*)mat.m_ShaderPath.data(), 120);
+
+			} break;
+			case Editor::AttributeType::Billboard: {
+				BillboardParticleDefinition &def = Editor::BillboardDefinitions[Editor::SelectedObject.index];
+				ImGui::Text("Billboard");
+
+				def.name.resize(128, '\0');
+				ImGui::InputText("Name", (char*)def.name.data(), 120);
+
+				int idx = def.m_Material - Editor::TrailMaterials;
+				MaterialCombo(&idx);
+
+				def.m_Material = &Editor::TrailMaterials[idx];
+			} break;
+			case Editor::AttributeType::None:
+				ImGui::Text("No selection");
+				break;
 		}
 	}
 };
@@ -235,7 +287,7 @@ public:
 				continue;
 
 			char label[128];
-			sprintf(label, ICON_MD_PHOTO_FILTER " %s", def.name);
+			sprintf(label, ICON_MD_CROP_FREE " %s", def.name.c_str());
 			if (ImGui::Selectable(label, selected == i)) {
 				Editor::SelectedObject = {
 					Editor::AttributeType::Billboard,
@@ -262,18 +314,59 @@ public:
 	{
 		static int selected = 0;
 		ImGui::BeginChild("EffectList", ImVec2(0, -ImGui::GetItemsLineHeightWithSpacing()), true);
+		
+		
 		for (int i = 0; i < Editor::EffectDefinitions.size(); i++)
 		{
 			auto &fx = Editor::EffectDefinitions[i];
 			
 			char label[128];
-			sprintf(label, ICON_MD_PHOTO_FILTER " %s [%d]", fx.name, fx.m_Count);
-			if (ImGui::Selectable(label, selected == i)) {
-				Editor::SelectedObject = {
+			sprintf(label, FX_ICON " %s (%d)", fx.name, fx.m_Count);
+			bool node = ImGui::TreeNode(label);
+			
+			ImGui::SameLine();
+			
+			if (ImGui::Button(ICON_MD_PLAY_ARROW)) {
+				Editor::SelectedEffect = &Editor::EffectDefinitions[i];
+			}
+			
+			ImGui::SameLine();
+
+			if (ImGui::Button(ICON_MD_ZOOM_IN)) {
+				Editor::SelectedObject = Editor::AttributeObject{
 					Editor::AttributeType::Effect,
 					i
 				};
-				Editor::SelectedEffect = &Editor::EffectDefinitions[i];
+			}
+
+			if (node) {
+				for (int j = 0; j < fx.m_Count; j++) {
+					auto &entry = fx.m_Entries[j];
+
+					switch (entry.type) {
+						case ParticleType::Billboard: {
+							auto def = entry.billboard;
+							sprintf(label, BILLBOARD_ICON " %s", def->name.c_str());
+							if (ImGui::Selectable(label, selected == j)) {
+								Editor::SelectedObject = {
+									Editor::AttributeType::Billboard,
+									(int)(def - Editor::BillboardDefinitions)
+								};
+							}
+						} break;
+						case ParticleType::Geometry: {
+							auto def = entry.geometry;
+							sprintf(label, GEOMETRY_ICON " %s", def->name.c_str());
+							if (ImGui::Selectable(label, selected == j)) {
+								Editor::SelectedObject = {
+									Editor::AttributeType::Geometry,
+									(int)(def - Editor::GeometryDefinitions)
+								};
+							}
+						} break;
+					}
+				}
+				ImGui::TreePop();
 			}
 		}
 		ImGui::EndChild();
@@ -296,6 +389,7 @@ AttributeObject SelectedObject;
 MaterialTexture MaterialTextures[MAX_MATERIAL_TEXTURES];
 TrailParticleMaterial TrailMaterials[MAX_TRAIL_MATERIALS];
 BillboardParticleDefinition BillboardDefinitions[MAX_BILLBOARD_PARTICLE_DEFINITIONS];
+GeometryParticleDefinition GeometryDefinitions[MAX_BILLBOARD_PARTICLE_DEFINITIONS];
 
 std::vector<ParticleEffect> EffectDefinitions;
 
@@ -309,6 +403,17 @@ BillboardParticleDefinition *GetBillboardDef(std::string name)
 		auto &def = BillboardDefinitions[i];
 		if (def.name == name)
 			return &BillboardDefinitions[i];
+	}
+
+	return nullptr;
+}
+
+GeometryParticleDefinition *GetGeometryDef(std::string name)
+{
+	for (int i = 0; i < MAX_BILLBOARD_PARTICLE_DEFINITIONS; i++) {
+		auto &def = GeometryDefinitions[i];
+		if (def.name == name)
+			return &GeometryDefinitions[i];
 	}
 
 	return nullptr;
@@ -446,6 +551,18 @@ void Load()
 		*bd++ = def;
 	}
 
+	auto gdefs = data.at("geometry_definitions");
+	auto gd = GeometryDefinitions;
+	for (auto entry : gdefs) {
+		GeometryParticleDefinition def = {};
+		std::string n = entry["name"];
+		def.name = n;
+		def.m_Material = GetMaterial(entry["material_name"]);
+		def.lifetime = entry["lifetime"];
+		*gd++ = def;
+	}
+
+
 	auto effects = data.at("fx");
 	for (auto entry : effects) {
 		
@@ -464,6 +581,9 @@ void Load()
 			switch (type) {
 				case ParticleType::Billboard:
 					ent.billboard = GetBillboardDef(name);
+					break;
+				case ParticleType::Geometry:
+					ent.geometry = GetGeometryDef(name);
 					break;
 			}
 
@@ -584,7 +704,7 @@ void Run()
 	EffectDefinitions.push_back(fx);*/
 
 	Load();
-	Save();
+	//Save();
 
 
 	ImWindow::ImwWindowManagerDX11 manager;
@@ -602,6 +722,7 @@ void Run()
 	ImwWindow *textures = new TextureList();
 	ImwWindow *materials = new MaterialList();
 	ImwWindow *effects = new EffectList();
+	ImwWindow *particles = new ParticleList();
 	ConsoleOutput = new Output();
 
 	ConsoleOutput->AddLog("Particle Editor v0.1\n");
@@ -614,6 +735,7 @@ void Run()
 	manager.DockWith(attr, materials, E_DOCK_ORIENTATION_BOTTOM, 0.5f);
 
 	manager.Dock(effects, E_DOCK_ORIENTATION_LEFT, 0.15);
+	manager.DockWith(particles, effects, E_DOCK_ORIENTATION_BOTTOM, 0.5f);
 
 	manager.Dock(timeline, E_DOCK_ORIENTATION_BOTTOM, 0.2f);
 	manager.DockWith(ConsoleOutput, timeline, E_DOCK_ORIENTATION_CENTER);
@@ -645,7 +767,7 @@ void Style()
 {
 	ImGuiStyle& style = ImGui::GetStyle();
 
-	auto accent = ImVec4(0.529f, 0.392f, 0.722f, 1.00f);
+	auto accent = ImVec4(0.00f, 0.48f, 0.80f, 1.00f);
 
 	style.Colors[ImGuiCol_Text] = ImVec4(0.90f, 0.90f, 0.90f, 1.00f);
 	style.Colors[ImGuiCol_TextDisabled] = ImVec4(0.33f, 0.33f, 0.33f, 1.00f);
