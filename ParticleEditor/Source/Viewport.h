@@ -182,6 +182,8 @@ public:
 		auto lo = min(size.x, size.y);
 		auto hi = max(size.x, size.y);
 
+		auto delta = ImGui::GetIO().DeltaTime;
+
 		m_Camera->SetProjection(XMMatrixPerspectiveFovRH(45.f, float(hi) / float(lo), 0.1f, 100.f));
 		
 		// temp
@@ -226,15 +228,15 @@ public:
 		if (io.MouseDown[0]) {
 			auto drag = ImGui::GetIO().MouseDelta;
 
-			m_Camera->Rotate(drag.x, drag.y);
+			m_Camera->Rotate(drag.x * delta * 100, drag.y * delta * 100);
 		}
 		else if (io.MouseDown[1]) {
 			auto drag = ImGui::GetIO().MouseDelta;
 
-			m_Camera->Pan(drag.x, drag.y);
+			m_Camera->Pan(drag.x * delta * 100, drag.y * delta * 100);
 		}
 		//}
-		m_Camera->Zoom(io.MouseWheel);
+		m_Camera->Zoom(io.MouseWheel * delta * 100);
 
 		m_Camera->Update(cxt);
 
@@ -267,12 +269,12 @@ public:
 		cxt->OMSetBlendState(m_States->AlphaBlend(), nullptr, 0xFFFFFFFF);
 
 		if (Editor::SelectedEffect) {
-			FXSystem->ProcessFX(Editor::SelectedEffect, XMMatrixTranslation(0, 0, 0), 1.f);
+			FXSystem->ProcessFX(Editor::SelectedEffect, XMMatrixTranslation(0, 0, 0), delta);
 		}
 
 		cxt->ClearDepthStencilView(m_DepthDSV, D3D11_CLEAR_DEPTH, 1.f, 0);
 
-		FXSystem->update(m_Camera, 1.f);
+		FXSystem->update(m_Camera, delta);
 		FXSystem->render(m_Camera, m_States, m_DepthDSV, ImwPlatformWindowDX11::s_pRTV);
 		FXSystem->frame();
 	}

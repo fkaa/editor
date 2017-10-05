@@ -8,6 +8,7 @@
 #include "Ease.h"
 #include <d3d11.h>
 #include <SimpleMath.h>
+#include <External\Helpers.h>
 
 
 using namespace DirectX;
@@ -23,11 +24,27 @@ using ParticleShaderID = uint64_t;
 struct VelocityBox {
 	SimpleMath::Vector3 m_Min;
 	SimpleMath::Vector3 m_Max;
+
+	SimpleMath::Vector3 GetVelocity() const {
+		return SimpleMath::Vector3(
+			RandomFloat(m_Min.x, m_Max.x),
+			RandomFloat(m_Min.y, m_Max.y),
+			RandomFloat(m_Min.z, m_Max.z)
+		);
+	}
 };
 
 struct PosBox {
 	SimpleMath::Vector3 m_Min;
 	SimpleMath::Vector3 m_Max;
+
+	SimpleMath::Vector3 GetPosition() const {
+		return SimpleMath::Vector3(
+			RandomFloat(m_Min.x, m_Max.x),
+			RandomFloat(m_Min.y, m_Max.y),
+			RandomFloat(m_Min.z, m_Max.z)
+		);
+	}
 };
 
 struct TrailParticleMaterial {
@@ -42,11 +59,12 @@ struct TrailParticleDefinition {
 	TrailParticleMaterial * m_Material;
 	PosBox m_StartPosition;
 	VelocityBox m_StartVelocity;
-	VelocityBox m_Gravity;
 	VelocityBox m_TurbulenceStart;
 	VelocityBox m_TurbulenceEnd;
 	SimpleMath::Vector2 m_SizeStart;
 	SimpleMath::Vector2 m_SizeEnd;
+	float m_Gravity;
+	float lifetime;
 	float frequency;
 };
 
@@ -57,13 +75,23 @@ struct TrailParticleEffect {
 
 struct TrailParticle {
 	SimpleMath::Vector3 m_Position;
+	SimpleMath::Vector3 m_Velocity;
 	SimpleMath::Vector2 m_Size;
 };
 
 
 struct Trail {
 	TrailParticle points[TRAIL_COUNT];
+	TrailParticleDefinition *def;
+	float age;
+	float spawn;
+	int dead;
 	int idx;
+};
+
+struct TrailEffect {
+	TrailParticleDefinition *def;
+	int trailidx;
 };
 
 
@@ -124,7 +152,7 @@ struct ParticleEffectEntry {
 	union {
 		GeometryParticleDefinition *geometry;
 		BillboardParticleDefinition *billboard;
-		TrailParticleDefinition *trail;
+		TrailEffect trail;
 	};
 };
 

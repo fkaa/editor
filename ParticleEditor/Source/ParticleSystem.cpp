@@ -9,10 +9,6 @@
 #include "External/DirectXTK.h"
 #include "Editor.h"
 
-inline float RandomFloat(float lo, float hi)
-{
-	return ((hi - lo) * ((float)rand() / RAND_MAX)) + lo;
-}
 
 ParticleSystem::ParticleSystem(const wchar_t *file, UINT capacity, UINT width, UINT height, ID3D11Device *device, ID3D11DeviceContext *cxt)
 	: capacity(capacity), device(device), cxt(cxt)
@@ -50,13 +46,14 @@ ParticleSystem::ParticleSystem(const wchar_t *file, UINT capacity, UINT width, U
 	m_BillboardBuffer = new VertexBuffer<BillboardParticle>(device, BufferUsageDynamic, BufferAccessWrite, capacity);
 
 	m_TrailBuffer = new VertexBuffer<TrailParticle>(device, BufferUsageDynamic, BufferAccessWrite, TRAIL_COUNT * TRAIL_PARTICLE_COUNT);
-	m_TrailParticles.push_back({});
+	//m_TrailParticles.push_back({});
 
 	blob = compile_shader(L"Resources/Shaders/TrailParticleSimple.hlsl", "VS", "vs_5_0", device);
 	DXCALL(device->CreateVertexShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, &trail_vs));
 
 	D3D11_INPUT_ELEMENT_DESC input_desc[] = {
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "VELOCITY", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "SIZE", 0, DXGI_FORMAT_R32G32_FLOAT,        0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 	};
 	trail_layout = create_input_layout(input_desc, ARRAYSIZE(input_desc), blob->GetBufferPointer(), blob->GetBufferSize(), device);
@@ -87,55 +84,57 @@ void ParticleSystem::ProcessFX(ParticleEffect *fx, XMMATRIX model, float dt)
 		fx->age += 0.01f;
 
 		switch (entry.type) {
-		case ParticleType::Billboard:
-		{
-			auto def = *entry.billboard;
+			case ParticleType::Billboard:
+			{
+				auto def = *entry.billboard;
 
-			auto particle = BillboardParticle{
-				{0, 0, 0},
-				{1, 1},
-				fx->age,
-				(int)(def.m_Material - Editor::TrailMaterials)
-			};
-
-			m_BillboardParticles.push_back(particle);
-		} break;
-		case ParticleType::Geometry: {
-			auto def = *entry.geometry;
-
-			auto particle = GeometryParticle{
-				XMMatrixTranslation(0, 0, 0),
-				fx->age,
-				(int)(def.m_Material - Editor::TrailMaterials)
-			};
-
-			m_GeometryParticles.push_back(particle);
-		} break;
-		case ParticleType::Trail: {
-			auto def = *entry.trail;
-
-			auto particles = m_TrailParticles[0].points;
-			m_TrailParticles[0].idx = (int)(def.m_Material - Editor::TrailMaterials);
-			if (fx->age >= 0.015) {
-				fx->age -= 0.015;
-				for (int i = TRAIL_COUNT - 2; i > 1; i--) {
-					//particles[i - 1].position = SimpleMath::Vector3::Lerp(particles[i].position, particles[i - 1].position, 0.9f);
-					particles[i] = particles[i - 1];
-				}
-				particles[1] = {
-					SimpleMath::Vector3(RandomFloat(-0.1, 0.1), 0, RandomFloat(-0.1, 0.1)),
-					SimpleMath::Vector2(0.3, 1.0)
+				auto particle = BillboardParticle{
+					{0, 0, 0},
+					{1, 1},
+					fx->age,
+					(int)(def.m_Material - Editor::TrailMaterials)
 				};
-				particles[0] = particles[1];
-				particles[TRAIL_COUNT - 1] = particles[TRAIL_COUNT - 2];
-			}
 
-			for (int i = 1; i < TRAIL_COUNT - 1; i++) {
-				particles[i].m_Position += SimpleMath::Vector3(0, 0.11 * dt, 0);
-				particles[i].m_Size = SimpleMath::Vector2(0.1, 1.0);
-			}
+				m_BillboardParticles.push_back(particle);
+			} break;
+			case ParticleType::Geometry: {
+				auto def = *entry.geometry;
 
-		} break;
+				auto particle = GeometryParticle{
+					XMMatrixTranslation(0, 0, 0),
+					fx->age,
+					(int)(def.m_Material - Editor::TrailMaterials)
+				};
+
+				m_GeometryParticles.push_back(particle);
+			} break;
+			case ParticleType::Trail: {
+				auto &trailfx = entry.trail;
+				auto def = *trailfx.def;
+
+				if (trailfx.trailidx == -1) {
+					trailfx.trailidx = m_TrailParticles.size();
+					
+					m_TrailParticles.push_back({});
+					m_TrailParticles[trailfx.trailidx].def = trailfx.def;
+					m_TrailParticles[trailfx.trailidx].idx = (int)(def.m_Material - Editor::TrailMaterials);
+				}
+
+				auto &trail = m_TrailParticles[trailfx.trailidx];
+				auto particles = trail.points;
+				
+				if (trail.dead >= TRAIL_COUNT - 2) {
+					// remove
+				}
+
+				if (trail.spawn >= def.frequency) {
+					particles[0] = {
+						def.m_StartPosition.GetPosition(),// RandomFloat(-0.01, 0.01), 0, RandomFloat(-0.01, 0.01)),
+						def.m_StartVelocity.GetVelocity(),
+						SimpleMath::Vector2(0.13, 1.0)
+					};
+				}
+			} break;
 		}
 	}
 }
@@ -184,6 +183,46 @@ void ParticleSystem::update(Camera *cam, float dt)
 	}
 
 	{
+		for (auto &trail : m_TrailParticles) {
+			auto particles = trail.points;
+			auto &def = *trail.def;
+
+			while (trail.spawn >= def.frequency) {
+				trail.spawn -= def.frequency;
+
+				if (trail.age >= def.lifetime) {
+
+					if (trail.dead >= TRAIL_COUNT - 2) {
+						// delete trail
+					}
+					else {
+						trail.dead++;
+					}
+				}
+
+				TrailParticle particle = particles[1];
+				particle.m_Position += particle.m_Velocity;
+				particle.m_Position.y += def.m_Gravity;
+
+				for (int i = TRAIL_COUNT - 2; i > 1; i--) {
+					auto p = particles[i - 1];
+					p.m_Position += particle.m_Velocity * dt;
+					p.m_Position.y += def.m_Gravity * dt;
+					particles[i] = p;
+				}
+
+				for (int i = 0; i < trail.dead; i++) {
+					particles[i] = particles[trail.dead];
+				}
+
+				particles[1] = particles[0];
+				particles[TRAIL_COUNT - 1] = particles[TRAIL_COUNT - 2];
+			}
+
+			trail.age += dt;
+			trail.spawn += dt;
+		}
+
 		TrailParticle *ptr = m_TrailBuffer->Map(cxt);
 		for (auto particle : m_TrailParticles) {
 			memcpy(ptr, particle.points, TRAIL_COUNT * sizeof(TrailParticle));

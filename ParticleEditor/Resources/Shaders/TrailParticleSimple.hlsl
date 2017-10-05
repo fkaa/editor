@@ -6,6 +6,7 @@ cbuffer Camera : register(b0)
 
 struct VSIn {
 	float3 position : POSITION;
+	float3 velocity : VELOCITY;
 	float2 size : SIZE;
 };
 
@@ -43,8 +44,8 @@ void GS(lineadj VSIn inp[4], uint primitive : SV_PrimitiveID, inout TriangleStre
 
 	//Calculate the ribs
 	float3 orient = -float3(View._m20, View._m21, View._m22);
-	float3 r0 = cross(u, orient) * rad0;
-	float3 r1 = cross(v, orient) * rad1;
+	float3 r0 = cross(u* rad0, orient);
+	float3 r1 = cross(v* rad1, orient) ;
 
 	float4x4 VP = mul(Proj, View);
 
@@ -66,5 +67,6 @@ void GS(lineadj VSIn inp[4], uint primitive : SV_PrimitiveID, inout TriangleStre
 
 float4 PS(GSOut input) : SV_Target0
 {
-	return float4(input.uv, 0, 1);
+	float4 col = lerp(float4(1, 1, 1, 1), float4(1, 1, 1, 0), input.uv.y);
+	return col;//float4(input.uv, 0, 1);
 }

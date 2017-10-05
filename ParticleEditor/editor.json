@@ -13,11 +13,21 @@
       "name": "CubeSphere"
     }
   ],
-   "trail_definitions": [
+    "trail_definitions": [
         {
             "lifetime": -1.0,
             "material_name": "trailMaterial",
-            "name": "Trail"
+            "name": "Trail",
+            "frequency": 0.02,
+            "start_position": {
+                "min": [-0.01, -0.01, -0.01],
+                "max": [0.01, 0.01, 0.01]
+            },
+            "start_velocity": {
+                "min": [-0.1, -0.1, -0.1],
+                "max": [0.1, 0.1, 0.1]
+            },
+            "gravity": 8.2
         }
     ],
   "fx": [

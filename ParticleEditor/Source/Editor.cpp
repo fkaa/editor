@@ -32,11 +32,6 @@
 
 using json = nlohmann::json;
 
-inline float RandomFloat(float lo, float hi)
-{
-	return ((hi - lo) * ((float)rand() / RAND_MAX)) + lo;
-}
-
 class MyMenu : public ImwMenu
 {
 public:
@@ -365,7 +360,7 @@ public:
 							}
 						} break;
 						case ParticleType::Trail: {
-							auto def = entry.trail;
+							auto def = entry.trail.def;
 							sprintf(label, TRAIL_ICON " %s", def->name.c_str());
 							if (ImGui::Selectable(label, selected == j)) {
 								Editor::SelectedObject = {
@@ -407,6 +402,35 @@ std::vector<ParticleEffect> EffectDefinitions;
 ParticleEffect *SelectedEffect;
 
 JsonValue EditorState;
+
+PosBox GetPositionBox(json &table, std::string name)
+{
+	auto box = table[name];
+	auto min = box["min"];
+	auto max = box["max"];
+
+	PosBox vel = {
+		{ min[0], min[1], min[2] },
+		{ max[0], max[1], max[2] },
+	};
+
+	return vel;
+}
+
+
+VelocityBox GetVelocityBox(json &table, std::string name)
+{
+	auto box = table[name];
+	auto min = box["min"];
+	auto max = box["max"];
+
+	VelocityBox vel = {
+		{ min[0], min[1], min[2] },
+		{ max[0], max[1], max[2] },
+	};
+
+	return vel;
+}
 
 BillboardParticleDefinition *GetBillboardDef(std::string name)
 {
@@ -591,7 +615,11 @@ void Load()
 		TrailParticleDefinition def = {};
 		std::string n = entry["name"];
 		def.name = n;
+		def.frequency = entry["frequency"];
+		def.m_Gravity = entry["gravity"];
 		def.m_Material = GetMaterial(entry["material_name"]);
+		def.m_StartPosition = GetPositionBox(entry, "start_position");
+		def.m_StartVelocity = GetVelocityBox(entry, "start_velocity");
 		//def.lifetime = entry["lifetime"];
 		*td++ = def;
 	}
@@ -619,7 +647,10 @@ void Load()
 					ent.geometry = GetGeometryDef(name);
 					break;
 				case ParticleType::Trail:
-					ent.trail = GetTrailDef(name);
+					ent.trail = {
+						GetTrailDef(name),
+						-1
+					};
 					break;
 			}
 

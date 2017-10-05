@@ -20,6 +20,12 @@ using namespace DirectX;
 static inline ImVec2 operator+(const ImVec2& lhs, const ImVec2& rhs) { return ImVec2(lhs.x + rhs.x, lhs.y + rhs.y); }
 static inline ImVec2 operator-(const ImVec2& lhs, const ImVec2& rhs) { return ImVec2(lhs.x - rhs.x, lhs.y - rhs.y); }
 
+
+inline float RandomFloat(float lo, float hi)
+{
+	return ((hi - lo) * ((float)rand() / RAND_MAX)) + lo;
+}
+
 ID3DBlob *compile_shader(const wchar_t *filename, const char *function, const char *model, ID3D11Device *gDevice);
 ID3D11InputLayout *create_input_layout(const D3D11_INPUT_ELEMENT_DESC *elements, size_t size, void const* bytecode, size_t len, ID3D11Device *gDevice);
 
