@@ -8,14 +8,32 @@
     ],
   "geometry_definitions": [
     {
-      "lifetime": -1.0,
+      "lifetime": 3.0,
       "material_name": "DefaultGeometry",
-      "name": "CubeSphere"
+      "name": "CubeSphere",
+      "frequency": 0.02,
+      "noise_scale": 0.2,
+      "noise_speed": 0.3,
+      "start_position": {
+          "min": [-0.01, -0.01, -0.01],
+          "max": [0.01, 0.01, 0.01]
+      },
+      "start_velocity": {
+          "min": [-0.1, -0.1, -0.1],
+          "max": [0.1, 0.1, 0.1]
+      },
+      "end_velocity": {
+          "min": [-0.1, -0.1, -0.1],
+          "max": [0.1, 0.1, 0.1]
+      },
+      "start_scale": 0,
+      "end_scale": 1,
+      "gravity": 8.2
     }
   ],
     "trail_definitions": [
         {
-            "lifetime": -1.0,
+            "lifetime": 4.0,
             "material_name": "trailMaterial",
             "name": "Trail",
             "frequency": 0.02,
@@ -38,7 +56,8 @@
           "type": "billboard"
         }
       ],
-      "name": "Billboard"
+      "name": "Billboard",
+      "time": -1
     },
     {
       "entries": [
@@ -47,7 +66,8 @@
           "type": "geometry"
         }
       ],
-      "name": "Smoke"
+      "name": "Smoke",
+      "time": 3
     },
     {
       "entries": [
@@ -56,7 +76,8 @@
           "type": "trail"
         }
       ],
-      "name": "Trail"
+      "name": "Trail",
+      "time": -1
     }
   ],
   "materials": [

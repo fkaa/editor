@@ -160,6 +160,7 @@ struct ParticleEffect {
 	char name[16] = "Untitled\0";
 	int m_Count;
 	float age;
+	float time;
 	ParticleEffectEntry m_Entries[8];
 };
 

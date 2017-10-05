@@ -270,6 +270,10 @@ public:
 
 		if (Editor::SelectedEffect) {
 			FXSystem->ProcessFX(Editor::SelectedEffect, XMMatrixTranslation(0, 0, 0), delta);
+		
+			if (Editor::SelectedEffect->age >= Editor::SelectedEffect->time) {
+				Editor::SelectedEffect->age = 0;
+			}
 		}
 
 		cxt->ClearDepthStencilView(m_DepthDSV, D3D11_CLEAR_DEPTH, 1.f, 0);

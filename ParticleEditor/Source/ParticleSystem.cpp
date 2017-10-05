@@ -81,7 +81,7 @@ void ParticleSystem::ProcessFX(ParticleEffect *fx, XMMATRIX model, float dt)
 	for (int i = 0; i < fx->m_Count; i++) {
 		auto &entry = fx->m_Entries[i];
 
-		fx->age += 0.01f;
+		fx->age += dt;
 
 		switch (entry.type) {
 			case ParticleType::Billboard:
@@ -176,7 +176,7 @@ void ParticleSystem::update(Camera *cam, float dt)
 
 	{
 		GeometryParticle *ptr = m_GeometryInstanceBuffer->Map(cxt);
-		for (auto particle : m_GeometryParticles) {
+		for (auto &particle : m_GeometryParticles) {
 			*ptr++ = particle;
 		}
 		m_GeometryInstanceBuffer->Unmap(cxt);

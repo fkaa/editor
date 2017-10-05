@@ -615,6 +615,7 @@ void Load()
 		TrailParticleDefinition def = {};
 		std::string n = entry["name"];
 		def.name = n;
+		def.lifetime = entry["lifetime"];
 		def.frequency = entry["frequency"];
 		def.m_Gravity = entry["gravity"];
 		def.m_Material = GetMaterial(entry["material_name"]);
