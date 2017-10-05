@@ -12,6 +12,8 @@ struct VSIn {
 
 	// ib(1)
 	float4x4 model : MODEL;
+	float noiseScale : NOISE;
+	
 	float age : AGE;
 	int idx : IDX;
 };
@@ -23,9 +25,6 @@ struct VSOutput {
 	float2 uv : TEXCOORD;
 	float age : AGE;
 };
-
-Texture2D Noise : register(t3);
-SamplerState Sampler : register(s1);
 
 float3 mod(float3 x, float3 y)
 {
@@ -201,7 +200,7 @@ VSOutput VS(VSIn input) {
 	VSOutput output;
 
 
-	float3 expand = cnoise(input.position*0.4 + input.age*0.1) * 0.3; //Noise.SampleLevel(Sampler, input.uv + float2(0, input.age*0.01), 0).r * input.normal;
+	float3 expand = cnoise(input.position*0.4 + input.age*0.1) * 0.23; //Noise.SampleLevel(Sampler, input.uv + float2(0, input.age*0.01), 0).r * input.normal;
 	float4 world = mul(input.model, float4(input.position+expand, 1));
 
 	output.position = mul(Proj, mul(View, world));
@@ -213,11 +212,31 @@ VSOutput VS(VSIn input) {
 	return output;
 }
 
+
+Texture2D Noise : register(t1);
+SamplerState Sampler : register(s1);
+
+static const float3 lightDir = float3(0.2, 0.7, 0.2);
+
 float4 PS(VSOutput input) : SV_Target0
 {
-	float noise = Noise.SampleLevel(Sampler, input.uv + float2(0, input.age*0.1), 0).r;
+	float noise = Noise.SampleLevel(Sampler, 0.3*input.uv + float2(0, input.age*0.01), 0).r;
 
-	//clip(saturate(step(0.25, noise)) - 0.5);
+	float emissive = 0.2;
+	float ambient = 0.2;
+	float diffuse = dot(input.normal, lightDir);
+	
+	float cap = 1 - mod(input.age*0.1, 1);
 
-	return float4(input.uv, 0, 1);
+	clip(
+		saturate(
+			step(0.25, (1-noise)*cap)
+		) - 0.25
+	);
+
+	float f = emissive + ambient * diffuse;
+
+	float3 col = float3(1, 1, 1);// lerp(float3(0.9, 0.3, 0.1), float3(0.23, 0.15, 0.03), cap);
+
+	return float4(col * f, 1);
 }
