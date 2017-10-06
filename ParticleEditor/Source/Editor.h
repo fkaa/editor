@@ -14,6 +14,11 @@ struct MaterialTexture {
 	ID3D11ShaderResourceView *m_SRV;
 };
 
+inline void ComboFunc(const char *label, ParticleEase *ease)
+{
+	ImGui::Combo(label, (int*)ease, EASE_STRINGS);
+}
+
 namespace Editor {;
 
 enum class AttributeType {
@@ -21,6 +26,7 @@ enum class AttributeType {
 	Effect,
 	Trail,
 	Billboard,
+	GeometryEntry,
 	Geometry,
 	Texture,
 	Material
@@ -32,6 +38,8 @@ struct AttributeObject {
 };
 
 extern Output *ConsoleOutput;
+
+extern float Speed;
 
 extern bool UnsavedChanges;
 extern AttributeObject SelectedObject;

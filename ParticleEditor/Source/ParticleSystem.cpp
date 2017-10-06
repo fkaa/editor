@@ -8,7 +8,7 @@
 #include "External/Helpers.h"
 #include "External/DirectXTK.h"
 #include "Editor.h"
-
+#include "Ease.h"
 
 ParticleSystem::ParticleSystem(const wchar_t *file, UINT capacity, UINT width, UINT height, ID3D11Device *device, ID3D11DeviceContext *cxt)
 	: capacity(capacity), device(device), cxt(cxt)
@@ -76,12 +76,15 @@ ParticleSystem::~ParticleSystem()
 	delete m_BillboardBuffer;
 }
 
-void ParticleSystem::ProcessFX(ParticleEffect *fx, XMMATRIX model, float dt)
+void ParticleSystem::ProcessFX(ParticleEffect *fx, SimpleMath::Matrix model, float dt)
 {
 	for (int i = 0; i < fx->m_Count; i++) {
 		auto &entry = fx->m_Entries[i];
 
 		fx->age += dt;
+
+		if (fx->age < entry.start || fx->age > entry.start + entry.time)
+			continue;
 
 		switch (entry.type) {
 			case ParticleType::Billboard:
@@ -100,13 +103,26 @@ void ParticleSystem::ProcessFX(ParticleEffect *fx, XMMATRIX model, float dt)
 			case ParticleType::Geometry: {
 				auto def = *entry.geometry;
 
-				auto particle = GeometryParticle{
-					XMMatrixTranslation(0, 0, 0),
-					fx->age,
-					(int)(def.m_Material - Editor::TrailMaterials)
-				};
+				auto factor = (fx->age - entry.start) / entry.time;
+				auto ease_spawn = GetEaseFunc(entry.m_SpawnEasing);
+				auto spawn = entry.m_Loop ? entry.m_SpawnStart : ease_spawn(entry.m_SpawnStart, entry.m_SpawnEnd, factor);
 
-				m_GeometryParticles.push_back(particle);
+				for (entry.m_SpawnedParticles += spawn * dt; entry.m_SpawnedParticles >= 1.f; entry.m_SpawnedParticles -= 1.f) {
+					GeometryParticle p = {};
+					p.pos = SimpleMath::Vector3::Transform(entry.m_StartPosition.GetPosition(), model);
+					p.velocity = entry.m_StartVelocity.GetVelocity();
+					p.rotvel = {
+						RandomFloat(-1, 1),
+						RandomFloat(-1, 1),
+						RandomFloat(-1, 1)
+					};
+					p.age = 0.f;
+					p.def = entry.geometry;
+					p.idx = (int)(def.m_Material - Editor::TrailMaterials);
+
+
+					m_GeometryParticles.push_back(p);
+				}
 			} break;
 			case ParticleType::Trail: {
 				auto &trailfx = entry.trail;
@@ -175,9 +191,41 @@ void ParticleSystem::update(Camera *cam, float dt)
 	}
 
 	{
-		GeometryParticle *ptr = m_GeometryInstanceBuffer->Map(cxt);
-		for (auto &particle : m_GeometryParticles) {
-			*ptr++ = particle;
+		GeometryParticleInstance *ptr = m_GeometryInstanceBuffer->Map(cxt);
+
+
+		auto it = m_GeometryParticles.begin();
+		while (it != m_GeometryParticles.end()) {
+			auto &particle = *it;
+			auto def = *particle.def;
+
+			if (particle.age > def.lifetime) {
+				it = m_GeometryParticles.erase(it);
+				continue;
+			}
+
+			auto factor = particle.age / def.lifetime;
+
+			auto ease_color = GetEaseFuncV(def.m_ColorEasing);
+			auto ease_deform = GetEaseFunc(def.m_DeformEasing);
+			auto ease_size = GetEaseFunc(def.m_SizeEasing);
+
+			auto scale = ease_size(def.m_SizeStart, def.m_SizeEnd, factor);
+
+			ptr->m_Model = XMMatrixRotationAxis(XMLoadFloat3(&particle.rotvel), factor*30)  * XMMatrixTranslationFromVector(XMLoadFloat3(&particle.pos))* XMMatrixScaling(scale, scale, scale);
+			ptr->m_Age = factor;
+			
+			ptr->m_Color = ease_color(def.m_ColorStart, def.m_ColorEnd, factor);
+			ptr->m_Deform = ease_deform(def.m_DeformFactorStart, def.m_DeformFactorEnd, factor);
+			ptr->m_NoiseScale = def.m_NoiseScale;
+			ptr->m_NoiseSpeed = def.m_NoiseSpeed;
+
+			particle.age += dt;
+			XMStoreFloat3(&particle.pos, XMLoadFloat3(&particle.pos) + XMLoadFloat3(&particle.velocity) * dt);
+
+			it++;
+			ptr++;
+			// todo: remove
 		}
 		m_GeometryInstanceBuffer->Unmap(cxt);
 	}
@@ -235,7 +283,7 @@ void ParticleSystem::update(Camera *cam, float dt)
 void ParticleSystem::frame()
 {
 	m_BillboardParticles.clear();
-	m_GeometryParticles.clear();
+	//m_GeometryParticles.clear();
 }
 
 void ParticleSystem::ReadSphereModel()
@@ -268,7 +316,7 @@ void ParticleSystem::ReadSphereModel()
 	m_GeometryBuffer = new VertexBuffer<SphereVertex>(device, BufferUsageImmutable, BufferAccessNone, vertexcount, &vertices[0]);
 	m_GeometryIndexBuffer = new IndexBuffer<UINT16>(device, BufferUsageImmutable, BufferAccessNone, indexcount, &indices[0]);
 
-	m_GeometryInstanceBuffer = new VertexBuffer<GeometryParticle>(device, BufferUsageDynamic, BufferAccessWrite, 128);
+	m_GeometryInstanceBuffer = new VertexBuffer<GeometryParticleInstance>(device, BufferUsageDynamic, BufferAccessWrite, 128);
 
 	ID3DBlob *blob = compile_shader(L"Resources/Shaders/GeometryParticleSimple.hlsl", "VS", "vs_5_0", device);
 	DXCALL(device->CreateVertexShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, &m_DefaultGeometryVS));
@@ -278,12 +326,15 @@ void ParticleSystem::ReadSphereModel()
 		{ "NORMAL",   0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,    0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 
-		{ "MODEL",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 0,                            D3D11_INPUT_PER_INSTANCE_DATA, 0 },
-		{ "MODEL",    1, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 0 },
-		{ "MODEL",    2, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 0 },
-		{ "MODEL",    3, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 0 },
-		{ "AGE",      0, DXGI_FORMAT_R32_FLOAT,          1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 0 },
-		{ "IDX",      0, DXGI_FORMAT_R32_SINT,           1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 0 },
+		{ "MODEL",      0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 0,                            D3D11_INPUT_PER_INSTANCE_DATA, 0 },
+		{ "MODEL",      1, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 0 },
+		{ "MODEL",      2, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 0 },
+		{ "MODEL",      3, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 0 },
+		{ "COLOR",      0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 0 },
+		{ "AGE",        0, DXGI_FORMAT_R32_FLOAT,          1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 0 },
+		{ "DEFORM",     0, DXGI_FORMAT_R32_FLOAT,          1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 0 },
+		{ "NOISESCALE", 0, DXGI_FORMAT_R32_FLOAT,          1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 0 },
+		{ "NOISESPEED", 0, DXGI_FORMAT_R32_FLOAT,          1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 0 },
 	};
 	m_DefaultGeometryLayout = create_input_layout(input_desc, ARRAYSIZE(input_desc), blob->GetBufferPointer(), blob->GetBufferSize(), device);
 
@@ -309,7 +360,7 @@ void ParticleSystem::render(Camera *cam, CommonStates *states, ID3D11DepthStenci
 	{
 		UINT strides[2] = {
 			(UINT)sizeof(SphereVertex),
-			(UINT)sizeof(GeometryParticle)
+			(UINT)sizeof(GeometryParticleInstance)
 		};
 
 		UINT offsets[2] = {

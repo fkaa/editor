@@ -30,7 +30,7 @@ public:
 	ParticleSystem(const wchar_t *file, UINT capacity, UINT width, UINT height, ID3D11Device *device, ID3D11DeviceContext *cxt);
 	~ParticleSystem();
 
-	void ProcessFX(ParticleEffect *fx, XMMATRIX model, float dt);
+	void ProcessFX(ParticleEffect *fx, SimpleMath::Matrix model, float dt);
 	void ProcessFX(ParticleEffect &fx, XMMATRIX model, XMVECTOR velocity, float dt);
 	void AddFX(std::string name, XMMATRIX model);
 	ParticleEffect GetFX(std::string name);
@@ -54,7 +54,7 @@ public:
 	int m_GeometryIndices;
 	VertexBuffer<SphereVertex> *m_GeometryBuffer;
 	IndexBuffer<UINT16> *m_GeometryIndexBuffer;
-	VertexBuffer<GeometryParticle> *m_GeometryInstanceBuffer;
+	VertexBuffer<GeometryParticleInstance> *m_GeometryInstanceBuffer;
 	VertexBuffer<BillboardParticle> *m_BillboardBuffer;
 	VertexBuffer<TrailParticle> *m_TrailBuffer;
 

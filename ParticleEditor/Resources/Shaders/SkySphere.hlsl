@@ -25,7 +25,7 @@ VSOut VS(VSInput input)
 	output.uv = input.uv;
 	output.wposition = input.position;
 
-	output.position = mul(Proj, mul(View, float4(input.position*15.f, 1.0)));
+	output.position = mul(Proj, mul(View, float4(input.position*35.f, 1.0)));
 	output.position.w = output.position.z;
 
 	return output;

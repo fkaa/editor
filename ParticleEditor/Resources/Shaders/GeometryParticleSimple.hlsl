@@ -12,16 +12,22 @@ struct VSIn {
 
 	// ib(1)
 	float4x4 model : MODEL;
+	float4 color : COLOR;
 	float age : AGE;
-	int idx : IDX;
+	float deform : DEFORM;
+	float noisescale : NOISESCALE;
+	float noisespeed : NOISESPEED;
 };
 
 struct VSOutput {
 	float4 position : SV_POSITION;
+	float4 color : COLOR;
 	float3 worldPos : POSITION;
 	float3 normal : NORMAL;
 	float2 uv : TEXCOORD;
 	float age : AGE;
+	float noisescale : NOISESCALE;
+	float noisespeed : NOISESPEED;
 };
 
 float3 mod(float3 x, float3 y)
@@ -198,14 +204,18 @@ VSOutput VS(VSIn input) {
 	VSOutput output;
 
 
-	float3 expand = cnoise(input.position*0.4 + input.age*0.1) * 0.23; //Noise.SampleLevel(Sampler, input.uv + float2(0, input.age*0.01), 0).r * input.normal;
+	float3 expand = cnoise(mul(input.model, float4(input.position, 1)).xyz) * input.deform; //Noise.SampleLevel(Sampler, input.uv + float2(0, input.age*0.01), 0).r * input.normal;
 	float4 world = mul(input.model, float4(input.position+expand, 1));
 
 	output.position = mul(Proj, mul(View, world));
 	output.worldPos = world;
-	output.normal = input.normal;
+	output.normal = mul(input.model, input.normal).xyz;
+	output.normal = normalize(output.normal);
 	output.uv = input.uv;
 	output.age = input.age;
+	output.noisescale = input.noisescale;
+	output.noisespeed = input.noisespeed;
+	output.color = input.color;
 
 	return output;
 }
@@ -218,23 +228,24 @@ static const float3 lightDir = float3(0.2, 0.7, 0.2);
 
 float4 PS(VSOutput input) : SV_Target0
 {
-	float noise = Noise.SampleLevel(Sampler, 0.3*input.uv + float2(0, input.age*0.01), 0).r;
+	float noise = Noise.SampleLevel(Sampler, input.noisescale*input.uv + float2(0, input.noisespeed), 0).r;
+	float noise2 = Noise.SampleLevel(Sampler, input.noisescale*input.uv + float2(input.age*input.noisespeed, 0), 0).g;
 
-	float emissive = 0.2;
-	float ambient = 0.2;
+	float emissive = 0.1;
+	float ambient = 0.04;
 	float diffuse = dot(input.normal, lightDir);
 	
-	float cap = 1 - mod(input.age*0.1, 1);
+	float cap = 1 - input.age;
 
 	clip(
 		saturate(
-			step(0.25, (1-noise)*cap)
-		) - 0.25
+			step(0.18, (noise*cap))
+		) - 0.005
 	);
 
 	float f = emissive + ambient * diffuse;
 
 	float3 col = float3(1, 1, 1);// lerp(float3(0.9, 0.3, 0.1), float3(0.23, 0.15, 0.03), cap);
 
-	return float4(col * f, 1);
+	return float4(input.color.xyz + 0.1 * diffuse, 1);
 }

@@ -58,6 +58,12 @@ public:
 
 			ImGui::EndMenu();
 		}
+
+		if (ImGui::BeginMenu("Settings")) {
+			ImGui::DragFloat("speed##settings", &Editor::Speed, 0.01f, 0.f, 5.f, "%.1fx speed");
+
+			ImGui::EndMenu();
+		}
 	}
 };
 
@@ -175,8 +181,58 @@ public:
 
 				def.m_Material = &Editor::TrailMaterials[idx];
 			} break;
+			case Editor::AttributeType::GeometryEntry: {
+				auto &entry = Editor::SelectedEffect->m_Entries[Editor::SelectedObject.index];
+				ImGui::Text(FX_ICON " %s[%d] > " GEOMETRY_ICON " %s", Editor::SelectedEffect->name, Editor::SelectedObject.index, entry.geometry->name.c_str());
+				ImGui::Separator();
+
+				ImGui::Text("Start Position");
+				ImGui::DragFloat3("min##start", (float*)&entry.m_StartPosition.m_Min, 0.05f);
+				ImGui::DragFloat3("max##start", (float*)&entry.m_StartPosition.m_Max, 0.05f);
+
+				ImGui::Text("Start Velocity");
+				ImGui::DragFloat3("min##vel", (float*)&entry.m_StartVelocity.m_Min, 0.05f);
+				ImGui::DragFloat3("max##vel", (float*)&entry.m_StartVelocity.m_Max, 0.05f);
+
+				ImGui::Text("Spawn Rate");
+				ComboFunc("easing##spawn", &entry.m_SpawnEasing);
+				ImGui::DragFloat("start##spawn", (float*)&entry.m_SpawnStart, 0.05f);
+				ImGui::DragFloat("end##spawn", (float*)&entry.m_SpawnEnd, 0.05f);
+
+				ImGui::Separator();
+
+				auto &def = *entry.geometry;
+				ImGui::Text(GEOMETRY_ICON " %s", entry.geometry->name.c_str());
+				ImGui::Separator();
+
+				ImGui::DragFloat("lifetime", &def.lifetime);
+				ImGui::DragFloat("gravity", &def.m_Gravity);
+
+				ImGui::Text("Noise");
+				ImGui::DragFloat("scale##noise", &def.m_NoiseScale, 0.005f);
+				ImGui::DragFloat("speed##noise", &def.m_NoiseSpeed, 0.005f);
+
+				ImGui::Text("Deform");
+				ComboFunc("easing##Deform", &def.m_DeformEasing);
+				ImGui::DragFloat("start##Deform", &def.m_DeformFactorStart, 0.005f);
+				ImGui::DragFloat("end##Deform", &def.m_DeformFactorEnd, 0.005f);
+
+				ImGui::Text("Size");  
+				ComboFunc("easing##Size",       &def.m_SizeEasing);
+				ImGui::DragFloat("start##Size", &def.m_SizeStart, 0.005f);
+				ImGui::DragFloat("end##Size",   &def.m_SizeEnd, 0.005f);
+
+				ImGui::Text("Color");
+				ComboFunc("easing##Color",        &def.m_ColorEasing);
+				ImGui::ColorEdit4("start##Color", (float*)&def.m_ColorStart);
+				ImGui::ColorEdit4("end##Color",   (float*)&def.m_ColorEnd);
+
+			} break;
 			case Editor::AttributeType::None:
 				ImGui::Text("No selection");
+				break;
+			default:
+				ImGui::Text("Not implemented :-(");
 				break;
 		}
 	}
@@ -321,13 +377,15 @@ public:
 			
 			ImGui::SameLine();
 			
-			if (ImGui::Button(ICON_MD_PLAY_ARROW)) {
+			sprintf(label, ICON_MD_PLAY_ARROW "##%s%d", fx.name, i);
+			if (ImGui::Button(label)) {
 				Editor::SelectedEffect = &Editor::EffectDefinitions[i];
 			}
 			
 			ImGui::SameLine();
 
-			if (ImGui::Button(ICON_MD_ZOOM_IN)) {
+			sprintf(label, ICON_MD_ZOOM_IN "##%s%d", fx.name, i);
+			if (ImGui::Button(label)) {
 				Editor::SelectedObject = Editor::AttributeObject{
 					Editor::AttributeType::Effect,
 					i
@@ -341,8 +399,9 @@ public:
 					switch (entry.type) {
 						case ParticleType::Billboard: {
 							auto def = entry.billboard;
-							sprintf(label, BILLBOARD_ICON " %s", def->name.c_str());
+							sprintf(label, "[%d] " BILLBOARD_ICON " %s", j, def->name.c_str());
 							if (ImGui::Selectable(label, selected == j)) {
+								Editor::SelectedEffect = &Editor::EffectDefinitions[i];
 								Editor::SelectedObject = {
 									Editor::AttributeType::Billboard,
 									(int)(def - Editor::BillboardDefinitions)
@@ -351,18 +410,20 @@ public:
 						} break;
 						case ParticleType::Geometry: {
 							auto def = entry.geometry;
-							sprintf(label, GEOMETRY_ICON " %s", def->name.c_str());
+							sprintf(label, "[%d] " GEOMETRY_ICON " %s##%s%d", j, def->name.c_str(), fx.name, j);
 							if (ImGui::Selectable(label, selected == j)) {
+								Editor::SelectedEffect = &Editor::EffectDefinitions[i];
 								Editor::SelectedObject = {
-									Editor::AttributeType::Geometry,
-									(int)(def - Editor::GeometryDefinitions)
+									Editor::AttributeType::GeometryEntry,
+									j
 								};
 							}
 						} break;
 						case ParticleType::Trail: {
 							auto def = entry.trail.def;
-							sprintf(label, TRAIL_ICON " %s", def->name.c_str());
+							sprintf(label, "[%d] " TRAIL_ICON " %s", j, def->name.c_str());
 							if (ImGui::Selectable(label, selected == j)) {
+								Editor::SelectedEffect = &Editor::EffectDefinitions[i];
 								Editor::SelectedObject = {
 									Editor::AttributeType::Trail,
 									(int)(def - Editor::TrailDefinitions)
@@ -387,6 +448,8 @@ ParticleSystem *FXSystem;
 namespace Editor {;
 
 Output *ConsoleOutput;
+
+float Speed = 1.f;
 
 bool UnsavedChanges = true;
 AttributeObject SelectedObject;
@@ -430,6 +493,11 @@ VelocityBox GetVelocityBox(json &table, std::string name)
 	};
 
 	return vel;
+}
+
+SimpleMath::Vector4 GetVector4(json &vec)
+{
+	return { vec[0], vec[1], vec[2], vec[3] };
 }
 
 BillboardParticleDefinition *GetBillboardDef(std::string name)
@@ -605,6 +673,25 @@ void Load()
 		def.name = n;
 		def.m_Material = GetMaterial(entry["material_name"]);
 		def.lifetime = entry["lifetime"];
+		def.m_Gravity = entry["gravity"];
+		def.m_NoiseScale = entry["noise_scale"];
+		def.m_NoiseSpeed = entry["noise_speed"];
+
+		auto color = entry["color"];
+		def.m_ColorEasing = GetEasingFromString(color["function"]);
+		def.m_ColorStart = GetVector4(color["start"]);
+		def.m_ColorEnd = GetVector4(color["end"]);
+
+		auto deform = entry["deform"];
+		def.m_DeformEasing = GetEasingFromString(deform["function"]);
+		def.m_DeformFactorStart = deform["start"];
+		def.m_DeformFactorEnd = deform["end"];
+		
+		auto size = entry["size"];
+		def.m_SizeEasing = GetEasingFromString(size["function"]);
+		def.m_SizeStart = size["start"];
+		def.m_SizeEnd = size["end"];
+
 		*gd++ = def;
 	}
 
@@ -631,6 +718,8 @@ void Load()
 		ParticleEffect fx = {};
 		std::string name = entry["name"];
 		memcpy(fx.name, name.data(), min(name.size(), 15));
+		for (int i = name.size(); i < 15; i++)
+			fx.name[i] = '\0';
 
 		auto entries = entry["entries"];
 		for (auto fxentry : entries) {
@@ -639,6 +728,17 @@ void Load()
 			
 			ParticleEffectEntry ent = {};
 			ent.type = type;
+
+			ent.start = fxentry["start"];
+			ent.time = fxentry["time"];
+
+			ent.m_StartPosition = GetPositionBox(fxentry, "start_position");
+			ent.m_StartVelocity = GetVelocityBox(fxentry, "start_velocity");
+
+			auto spawn = fxentry["spawn"];
+			ent.m_SpawnEasing  = GetEasingFromString(spawn["function"]);
+			ent.m_SpawnStart = spawn["start"];
+			ent.m_SpawnEnd = spawn["end"];
 
 			switch (type) {
 				case ParticleType::Billboard:

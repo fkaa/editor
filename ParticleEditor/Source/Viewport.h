@@ -269,7 +269,7 @@ public:
 		cxt->OMSetBlendState(m_States->AlphaBlend(), nullptr, 0xFFFFFFFF);
 
 		if (Editor::SelectedEffect) {
-			FXSystem->ProcessFX(Editor::SelectedEffect, XMMatrixTranslation(0, 0, 0), delta);
+			FXSystem->ProcessFX(Editor::SelectedEffect, XMMatrixTranslation(0, 0, 0), delta * Editor::Speed);
 		
 			if (Editor::SelectedEffect->age >= Editor::SelectedEffect->time) {
 				Editor::SelectedEffect->age = 0;
@@ -278,7 +278,7 @@ public:
 
 		cxt->ClearDepthStencilView(m_DepthDSV, D3D11_CLEAR_DEPTH, 1.f, 0);
 
-		FXSystem->update(m_Camera, delta);
+		FXSystem->update(m_Camera, delta * Editor::Speed);
 		FXSystem->render(m_Camera, m_States, m_DepthDSV, ImwPlatformWindowDX11::s_pRTV);
 		FXSystem->frame();
 	}

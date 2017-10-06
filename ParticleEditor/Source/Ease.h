@@ -39,3 +39,26 @@ EASE_FUNC(float, EaseOut, EaseOutFactor)
 EASE_FUNC(XMVECTOR, EaseOut, EaseOutFactor)
 
 }
+
+enum class ParticleEase {
+	Linear = 0,
+	EaseIn,
+	EaseOut,
+	None
+};
+
+typedef float(*EaseFunc)(float, float, float);
+typedef XMVECTOR(*EaseFuncV)(XMVECTOR, XMVECTOR, float);
+
+extern EaseFunc ease_funcs[4];
+extern EaseFuncV ease_funcs_xmv[4];
+
+inline EaseFunc GetEaseFunc(ParticleEase ease)
+{
+	return ease_funcs[(int)ease];
+}
+
+inline EaseFuncV GetEaseFuncV(ParticleEase ease)
+{
+	return ease_funcs_xmv[(int)ease];
+}

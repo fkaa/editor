@@ -9,7 +9,7 @@
 #include <d3d11.h>
 #include <SimpleMath.h>
 #include <External\Helpers.h>
-
+#include "Ease.h"
 
 using namespace DirectX;
 
@@ -105,19 +105,25 @@ enum class TrailParticleEnvironment {
 struct GeometryParticleDefinition {
 	std::string name;
 	TrailParticleMaterial *m_Material;
-	PosBox m_StartPosition;
-	VelocityBox m_StartVelocity;
-	VelocityBox m_Gravity;
-	VelocityBox m_TurbulenceStart;
-	VelocityBox m_TurbuldsenceEnd;
-	SimpleMath::Vector2 m_SizeStart;
-	SimpleMath::Vector2 m_SizeEnd;
+
 	float lifetime;
+	float m_Gravity;
 
-	int m_ModelID;
+	float m_NoiseScale;
+	float m_NoiseSpeed;
+
+	ParticleEase m_DeformEasing;
+	float m_DeformFactorStart;
+	float m_DeformFactorEnd;
+
+	ParticleEase m_SizeEasing;
+	float m_SizeStart;
+	float m_SizeEnd;
+
+	ParticleEase m_ColorEasing;
+	SimpleMath::Vector4 m_ColorStart;
+	SimpleMath::Vector4 m_ColorEnd;
 };
-
-
 
 struct BillboardParticleDefinition {
 	std::string name;
@@ -138,6 +144,15 @@ enum class ParticleType {
 	Geometry
 };
 
+inline ParticleEase GetEasingFromString(std::string str)
+{
+	if (str == "linear") return ParticleEase::Linear;
+	if (str == "easein") return ParticleEase::EaseIn;
+	if (str == "easeout") return ParticleEase::EaseOut;
+
+	assert(false);
+}
+
 inline ParticleType ParticleTypeFromString(std::string str)
 {
 	if (str == "trail") return ParticleType::Trail;
@@ -154,6 +169,22 @@ struct ParticleEffectEntry {
 		BillboardParticleDefinition *billboard;
 		TrailEffect trail;
 	};
+
+	float start;
+	float time;
+	bool m_Loop;
+	float m_SpawnedParticles;
+
+	PosBox m_StartPosition;
+	VelocityBox m_StartVelocity;
+
+	ParticleEase m_SpawnEasing;
+	float m_SpawnStart;
+	float m_SpawnEnd;
+	
+	/*ParticleEase m_TurbulenceEasing;
+	VelocityBox m_TurbulenceStart;
+	VelocityBox m_TurbulenceEnd;*/
 };
 
 struct ParticleEffect {
@@ -172,12 +203,23 @@ struct BillboardParticle {
 };
 
 struct GeometryParticle {
-	XMMATRIX model;
+	XMFLOAT3 pos;
+	XMFLOAT3 velocity;
+	XMFLOAT3 rotvel;
+	GeometryParticleDefinition *def;
 	float age;
 	int idx;
 };
 
-
+struct GeometryParticleInstance {
+	XMMATRIX m_Model;
+	XMVECTOR m_Color;
+	float m_Age;
+	float m_Deform;
+	
+	float m_NoiseScale;
+	float m_NoiseSpeed;
+};
 
 namespace old {
 #define EMITTER_STRINGS "Static\0Box\0Sphere\0"

@@ -6,31 +6,31 @@
             "name": "DefaultBillboard"
         }
     ],
-  "geometry_definitions": [
-    {
-      "lifetime": 3.0,
-      "material_name": "DefaultGeometry",
-      "name": "CubeSphere",
-      "frequency": 0.02,
-      "noise_scale": 0.2,
-      "noise_speed": 0.3,
-      "start_position": {
-          "min": [-0.01, -0.01, -0.01],
-          "max": [0.01, 0.01, 0.01]
-      },
-      "start_velocity": {
-          "min": [-0.1, -0.1, -0.1],
-          "max": [0.1, 0.1, 0.1]
-      },
-      "end_velocity": {
-          "min": [-0.1, -0.1, -0.1],
-          "max": [0.1, 0.1, 0.1]
-      },
-      "start_scale": 0,
-      "end_scale": 1,
-      "gravity": 8.2
-    }
-  ],
+    "geometry_definitions": [
+        {
+            "material_name": "DefaultGeometry",
+            "name": "CubeSphere",
+            "lifetime": 3.0,
+            "gravity": 5.0,
+            "noise_scale": 0.1,
+            "noise_speed": 0.15,
+            "color": {
+                "start": [0, 0, 0, 1],
+                "end": [1, 1, 1, 1],
+                "function": "linear"
+            },
+            "deform": {
+                "start": 0,
+                "end": 0.4,
+                "function": "linear"
+            },
+            "size": {
+                "start": 0,
+                "end": 2,
+                "function": "easeout"
+            }
+        }
+    ],
     "trail_definitions": [
         {
             "lifetime": 4.0,
@@ -48,38 +48,89 @@
             "gravity": 8.2
         }
     ],
-  "fx": [
-    {
-      "entries": [
+    "fx": [
         {
-          "name": "DefaultBillboard",
-          "type": "billboard"
-        }
-      ],
-      "name": "Billboard",
-      "time": -1
-    },
-    {
-      "entries": [
+            "entries": [
+                {
+                    "name": "DefaultBillboard",
+                    "type": "billboard",
+                    "start": 0,
+                    "time": 3,
+                    "spawn": {
+                        "start": 5,
+                        "end": 0,
+                        "function": "linear"
+                    },
+
+                    "start_position": {
+                        "min": [-0.01, -0.01, -0.01],
+                        "max": [0.01, 0.01, 0.01]
+                    },
+                    "start_velocity": {
+                        "min": [-0.1, -0.1, -0.1],
+                        "max": [0.1, 0.1, 0.1]
+                    }
+                }
+            ],
+            "name": "Billboard",
+            "time": -1
+        },
         {
-          "name": "CubeSphere",
-          "type": "geometry"
-        }
-      ],
-      "name": "Smoke",
-      "time": 3
-    },
-    {
-      "entries": [
+            "name": "Smoke",
+            "time": 3,
+
+            "entries": [
+                {
+                    "name": "CubeSphere",
+                    "type": "geometry",
+
+                    "start": 0,
+                    "time": 3,
+
+                    "spawn": {
+                        "start": 5,
+                        "end": 0,
+                        "function": "linear"
+                    },
+
+                    "start_position": {
+                        "min": [-0.11, -0.11, -0.11],
+                        "max": [0.11, 0.11, 0.11]
+                    },
+                    "start_velocity": {
+                        "min": [-0.21, 2.0, -0.21],
+                        "max": [0.21, 2.5, 0.21]
+                    }
+                }
+            ]
+        },
         {
-          "name": "Trail",
-          "type": "trail"
+            "entries": [
+                {
+                    "name": "Trail",
+                    "type": "trail",
+                    "start": 0,
+                    "time": 3,
+                    "spawn": {
+                        "start": 5,
+                        "end": 0,
+                        "function": "linear"
+                    },
+
+                    "start_position": {
+                        "min": [-0.01, -0.01, -0.01],
+                        "max": [0.01, 0.01, 0.01]
+                    },
+                    "start_velocity": {
+                        "min": [-0.1, -0.1, -0.1],
+                        "max": [0.1, 0.1, 0.1]
+                    }
+                }
+            ],
+            "name": "Trail",
+            "time": -1
         }
-      ],
-      "name": "Trail",
-      "time": -1
-    }
-  ],
+    ],
   "materials": [
     {
       "name": "Default",
