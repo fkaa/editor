@@ -63,4 +63,6 @@ void Camera::Pan(float x, float y)
 void Camera::Zoom(float amount)
 {
 	m_Zoom += amount * -0.1f;
+
+	if (m_Zoom == 0.f) m_Zoom = 0.0001f;
 }

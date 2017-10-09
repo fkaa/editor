@@ -181,6 +181,10 @@ struct ParticleEffectEntry {
 	ParticleEase m_SpawnEasing;
 	float m_SpawnStart;
 	float m_SpawnEnd;
+	float m_RotLimitMin;
+	float m_RotLimitMax;
+	float m_RotSpeedMin;
+	float m_RotSpeedMax;
 	
 	/*ParticleEase m_TurbulenceEasing;
 	VelocityBox m_TurbulenceStart;
@@ -206,6 +210,7 @@ struct GeometryParticle {
 	XMFLOAT3 pos;
 	XMFLOAT3 velocity;
 	XMFLOAT3 rotvel;
+	float rot;
 	GeometryParticleDefinition *def;
 	float age;
 	int idx;

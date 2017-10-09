@@ -8,25 +8,25 @@
     ],
     "geometry_definitions": [
         {
-            "material_name": "DefaultGeometry",
-            "name": "CubeSphere",
-            "lifetime": 3.0,
+            "material_name": "FireSmokeMaterial",
+            "name": "FireSmokeSphere",
+            "lifetime": 6.0,
             "gravity": 5.0,
-            "noise_scale": 0.1,
-            "noise_speed": 0.15,
+            "noise_scale": 0.045,
+            "noise_speed": 0.2,
             "color": {
-                "start": [0, 0, 0, 1],
-                "end": [1, 1, 1, 1],
-                "function": "linear"
+                "start": [0.7, 0.215, 0.215, 1],
+                "end": [0.07, 0.07, 0.07, 1],
+                "function": "easeout"
             },
             "deform": {
-                "start": 0,
+                "start": -0.2,
                 "end": 0.4,
                 "function": "linear"
             },
             "size": {
                 "start": 0,
-                "end": 2,
+                "end": 2.3,
                 "function": "easeout"
             }
         }
@@ -57,7 +57,7 @@
                     "start": 0,
                     "time": 3,
                     "spawn": {
-                        "start": 5,
+                        "start": 8,
                         "end": 0,
                         "function": "linear"
                     },
@@ -69,6 +69,14 @@
                     "start_velocity": {
                         "min": [-0.1, -0.1, -0.1],
                         "max": [0.1, 0.1, 0.1]
+                    },
+                    "rotation": {
+                        "min": -0.2,
+                        "max": 0.2
+                    },
+                    "rotation_speed": {
+                        "min": -1,
+                        "max": 1
                     }
                 }
             ],
@@ -81,14 +89,14 @@
 
             "entries": [
                 {
-                    "name": "CubeSphere",
+                    "name": "FireSmokeSphere",
                     "type": "geometry",
 
                     "start": 0,
                     "time": 3,
 
                     "spawn": {
-                        "start": 5,
+                        "start": 8,
                         "end": 0,
                         "function": "linear"
                     },
@@ -98,8 +106,16 @@
                         "max": [0.11, 0.11, 0.11]
                     },
                     "start_velocity": {
-                        "min": [-0.21, 2.0, -0.21],
-                        "max": [0.21, 2.5, 0.21]
+                        "min": [-0.11, 1.0, -0.11],
+                        "max": [0.11, 1.1, 0.11]
+                    },
+                    "rotation": {
+                        "min": -0.1,
+                        "max": 0.1
+                    },
+                    "rotation_speed": {
+                        "min": -1,
+                        "max": 1
                     }
                 }
             ]
@@ -112,7 +128,7 @@
                     "start": 0,
                     "time": 3,
                     "spawn": {
-                        "start": 5,
+                        "start": 8,
                         "end": 0,
                         "function": "linear"
                     },
@@ -124,6 +140,14 @@
                     "start_velocity": {
                         "min": [-0.1, -0.1, -0.1],
                         "max": [0.1, 0.1, 0.1]
+                    },
+                    "rotation": {
+                        "min": -0.2,
+                        "max": 0.2
+                    },
+                    "rotation_speed": {
+                        "min": -1,
+                        "max": 1
                     }
                 }
             ],
@@ -137,7 +161,7 @@
       "path": "Resources/Shaders/BillboardParticleSimple.hlsl"
     },
     {
-      "name": "DefaultGeometry",
+      "name": "FireSmokeMaterial",
       "path": "Resources/Shaders/GeometryParticleSimple.hlsl"
     },
     {
@@ -152,7 +176,7 @@
         },
         {
             "name": "Noise",
-            "path": "Resources/Textures/Noise2.png"
+            "path": "Resources/Textures/GoodNoise.png"
         },
         {
             "name": "Mask",

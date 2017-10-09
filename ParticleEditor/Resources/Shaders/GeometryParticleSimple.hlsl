@@ -28,6 +28,7 @@ struct VSOutput {
 	float age : AGE;
 	float noisescale : NOISESCALE;
 	float noisespeed : NOISESPEED;
+	float deform : DEFORM;
 };
 
 float3 mod(float3 x, float3 y)
@@ -204,10 +205,11 @@ VSOutput VS(VSIn input) {
 	VSOutput output;
 
 
-	float3 expand = cnoise(mul(input.model, float4(input.position, 1)).xyz) * input.deform; //Noise.SampleLevel(Sampler, input.uv + float2(0, input.age*0.01), 0).r * input.normal;
-	float4 world = mul(input.model, float4(input.position+expand, 1));
+	float4 world = mul(input.model, float4(input.position, 1));
+	float expand = cnoise(world * input.deform+input.position*input.age*10); //Noise.SampleLevel(Sampler, input.uv + float2(0, input.age*0.01), 0).r * input.normal;
 
-	output.position = mul(Proj, mul(View, world));
+
+	output.position = mul(Proj, mul(View, world + float4(input.normal * expand * input.deform, 0)));
 	output.worldPos = world;
 	output.normal = mul(input.model, input.normal).xyz;
 	output.normal = normalize(output.normal);
@@ -216,6 +218,7 @@ VSOutput VS(VSIn input) {
 	output.noisescale = input.noisescale;
 	output.noisespeed = input.noisespeed;
 	output.color = input.color;
+	output.deform = expand;
 
 	return output;
 }
@@ -228,24 +231,44 @@ static const float3 lightDir = float3(0.2, 0.7, 0.2);
 
 float4 PS(VSOutput input) : SV_Target0
 {
-	float noise = Noise.SampleLevel(Sampler, input.noisescale*input.uv + float2(0, input.noisespeed), 0).r;
-	float noise2 = Noise.SampleLevel(Sampler, input.noisescale*input.uv + float2(input.age*input.noisespeed, 0), 0).g;
+	float noise = Noise.SampleLevel(Sampler, input.noisescale*input.uv + float2(0, input.noisespeed), 0).g;
+float noise2 = Noise.SampleLevel(Sampler, input.noisescale*input.uv + float2(input.age*input.noisespeed, 0), 0).b;
+float noise3 = Noise.SampleLevel(Sampler, 0.1*input.uv + float2(0, input.age*input.noisespeed), 0).r;
 
 	float emissive = 0.1;
-	float ambient = 0.04;
-	float diffuse = dot(input.normal, lightDir);
+	float ambient = 0.14;
+	float diffuse = max(dot(input.normal, lightDir), 0);
 	
 	float cap = 1 - input.age;
 
 	clip(
 		saturate(
-			step(0.18, (noise*cap))
+			step(0.13, (noise*cap*0.95))
 		) - 0.005
 	);
+
+	float t = abs(input.deform*input.uv.y)+0.04;
+	float falloff = (1 - input.age);
+
+	float innerFactor = step(input.age*1.85 - 0.01, (0.55-input.age*0.15)*t*noise *3);
+	float outerFactor = 1 - innerFactor;
+
+	float3 inner = float3(1, 0.6, 0.3)*2;
+	float3 innerEnd = inner;
+
+
+	float3 outer = input.color.xyz;
+	float3 outerEnd = input.color.xyz;
+
+	float3 e = ((innerFactor * lerp(inner, innerEnd, falloff - 0.49)) + (outerFactor * lerp(outerEnd, outer, falloff - 0.7)));
+
+
 
 	float f = emissive + ambient * diffuse;
 
 	float3 col = float3(1, 1, 1);// lerp(float3(0.9, 0.3, 0.1), float3(0.23, 0.15, 0.03), cap);
 
-	return float4(input.color.xyz + 0.1 * diffuse, 1);
+	//return float4(col * f, 1);
+	return float4(e * col +f, 1);
+	//return float4(input.color.xyz + 0.025 * diffuse, 1);
 }

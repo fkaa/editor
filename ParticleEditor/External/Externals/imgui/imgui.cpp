@@ -5665,7 +5665,7 @@ bool ImGui::CollapsingHeader(const char* label, const char* str_id, bool display
 
     // For regular tree nodes, we arbitrary allow to click past 2 worth of ItemSpacing
     // (Ideally we'd want to add a flag for the user to specify we want want the hit test to be done up to the right side of the content or not)
-    const ImRect interact_bb = display_frame ? bb : ImRect(bb.Min.x, bb.Min.y, bb.Min.x + text_width + style.ItemSpacing.x*2, bb.Max.y);
+    const ImRect interact_bb =  ImRect(bb.Min.x, bb.Min.y, bb.Min.x + text_width + style.ItemSpacing.x*2, bb.Max.y);
     bool opened = TreeNodeBehaviorIsOpened(id, (default_open ? ImGuiTreeNodeFlags_DefaultOpen : 0) | (display_frame ? ImGuiTreeNodeFlags_NoAutoExpandOnLog : 0));
     if (!ItemAdd(interact_bb, &id))
         return opened;
@@ -5787,7 +5787,7 @@ bool ImGui::TreeNodeV(const char* str_id, const char* fmt, va_list args)
         str_id = fmt;
 
     ImGui::PushID(str_id);
-    const bool opened = ImGui::CollapsingHeader(g.TempBuffer, "", false);
+    const bool opened = ImGui::CollapsingHeader(g.TempBuffer, "", true);
     ImGui::PopID();
 
     if (opened)

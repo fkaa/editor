@@ -112,10 +112,11 @@ void ParticleSystem::ProcessFX(ParticleEffect *fx, SimpleMath::Matrix model, flo
 					p.pos = SimpleMath::Vector3::Transform(entry.m_StartPosition.GetPosition(), model);
 					p.velocity = entry.m_StartVelocity.GetVelocity();
 					p.rotvel = {
-						RandomFloat(-1, 1),
-						RandomFloat(-1, 1),
-						RandomFloat(-1, 1)
+						RandomFloat(entry.m_RotLimitMin, entry.m_RotLimitMax),
+						RandomFloat(entry.m_RotLimitMin, entry.m_RotLimitMax),
+						RandomFloat(entry.m_RotLimitMin, entry.m_RotLimitMax)
 					};
+					p.rot = RandomFloat(entry.m_RotSpeedMin, entry.m_RotSpeedMax);
 					p.age = 0.f;
 					p.def = entry.geometry;
 					p.idx = (int)(def.m_Material - Editor::TrailMaterials);

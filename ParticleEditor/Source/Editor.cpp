@@ -30,6 +30,36 @@
 #define TRAIL_ICON ICON_MD_GRAIN
 #define FX_ICON ICON_MD_PHOTO_FILTER
 
+const ImVec4 FX_COLORS[3] = {
+	ImColor(0xFFBA68C8),
+	ImColor(0xFFAB47BC),
+	ImColor(0xFF9C27B0)
+};
+
+const ImVec4 BILLBOARD_COLORS[3] = {
+	ImColor(0xFF009688),
+	ImColor(0xFF00897B),
+	ImColor(0xFF00796B)
+};
+
+const ImVec4 GEOMETRY_COLORS[3] = {
+	ImColor(0xE91E63FF),
+	ImColor(0xD81B60FF),
+	ImColor(0xC2185BFF)
+};
+
+const ImVec4 BUTTON_COLORS[3] = {
+	ImColor(120, 144, 156, 0),
+	ImColor(96, 125, 139),
+	ImColor(84, 110, 122)
+};
+
+const ImVec4 SELECT_COLORS[3] = {
+	ImColor(117, 117, 117),
+	ImColor(97, 97, 97),
+	ImColor(66, 66, 66)
+};
+
 using json = nlohmann::json;
 
 class MyMenu : public ImwMenu
@@ -44,9 +74,23 @@ public:
 	{
 		if (ImGui::BeginMenu("File"))
 		{
-			if (ImGui::MenuItem("Show content", NULL, ImWindow::ImwWindowManager::GetInstance()->GetMainPlatformWindow()->IsShowContent()))
+			if (ImGui::MenuItem("Open", "CTRL+O", nullptr, false))
 			{
-				ImWindow::ImwWindowManager::GetInstance()->GetMainPlatformWindow()->SetShowContent(!ImWindow::ImwWindowManager::GetInstance()->GetMainPlatformWindow()->IsShowContent());
+
+			}
+
+			if (ImGui::MenuItem("Save", "CTRL+O", nullptr, false))
+			{
+
+			}
+			if (ImGui::MenuItem("Save As", "CTRL+O", nullptr, false))
+			{
+
+			}
+
+			if (ImGui::MenuItem("Export", "CTRL+E", nullptr, false))
+			{
+
 			}
 
 			ImGui::Separator();
@@ -77,9 +121,9 @@ public:
 	{
 		ImGui::BeginChild("Toolbar.main", ImVec2(0, ImGui::GetItemsLineHeightWithSpacing() + 10), true);
 		
-		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.420, 0.482, 0.082, 1.0f));
-		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.576, 0.647, 0.216, 1.0f));
-		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.741, 0.808, 0.404, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_Button,        FX_COLORS[0]);
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, FX_COLORS[1]);
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive,  FX_COLORS[2]);
 		ImGui::Button(FX_ICON " [FX]");
 		if (ImGui::IsItemHovered())
 			ImGui::SetTooltip("Create new Particle FX");
@@ -89,19 +133,38 @@ public:
 		ImGui::TextDisabled("|");
 
 		ImGui::SameLine();
+
+
+				
+		//ImGui::PushStyleColor(ImGuiCol_Button,        TRAIL_COLORS[0]);
+		//ImGui::PushStyleColor(ImGuiCol_ButtonHovered, TRAIL_COLORS[1]);
+		//ImGui::PushStyleColor(ImGuiCol_ButtonActive,  TRAIL_COLORS[2]);
 		ImGui::Button(TRAIL_ICON " [Trail]");
 		if (ImGui::IsItemHovered())
 			ImGui::SetTooltip("Create new Particle Trail");
+		//ImGui::PopStyleColor(3);
 
 		ImGui::SameLine();
+
+
+		ImGui::PushStyleColor(ImGuiCol_Button,        BILLBOARD_COLORS[0]);
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, BILLBOARD_COLORS[1]);
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive,  BILLBOARD_COLORS[2]);
 		ImGui::Button(BILLBOARD_ICON " [Billboard]");
 		if (ImGui::IsItemHovered())
 			ImGui::SetTooltip("Create new Billboard Particle");
+		ImGui::PopStyleColor(3);
 
 		ImGui::SameLine();
+
+
+		ImGui::PushStyleColor(ImGuiCol_Button,        GEOMETRY_COLORS[0]);
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, GEOMETRY_COLORS[1]);
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive,  GEOMETRY_COLORS[2]);
 		ImGui::Button(GEOMETRY_ICON " [Geometry]");
 		if (ImGui::IsItemHovered())
 			ImGui::SetTooltip("Create new Geometry Particle");
+		ImGui::PopStyleColor(3);
 
 		ImGui::EndChild();
 	}
@@ -193,6 +256,16 @@ public:
 				ImGui::Text("Start Velocity");
 				ImGui::DragFloat3("min##vel", (float*)&entry.m_StartVelocity.m_Min, 0.05f);
 				ImGui::DragFloat3("max##vel", (float*)&entry.m_StartVelocity.m_Max, 0.05f);
+
+				ImGui::Text("Rotation Axis");
+				ImGui::DragFloat("min##rotaxis", &entry.m_RotLimitMin, 0.05f);
+				ImGui::DragFloat("max##rotaxis", &entry.m_RotLimitMax, 0.05f);
+
+
+				ImGui::Text("Rotation Speed");
+				ImGui::DragFloat("min##rotspeed", &entry.m_RotSpeedMin, 0.05f);
+				ImGui::DragFloat("max##rotspeed", &entry.m_RotSpeedMax, 0.05f);
+
 
 				ImGui::Text("Spawn Rate");
 				ComboFunc("easing##spawn", &entry.m_SpawnEasing);
@@ -377,6 +450,7 @@ public:
 			
 			ImGui::SameLine();
 			
+			ImGui::SameLine(ImGui::GetWindowContentRegionWidth() - 42);
 			sprintf(label, ICON_MD_PLAY_ARROW "##%s%d", fx.name, i);
 			if (ImGui::Button(label)) {
 				Editor::SelectedEffect = &Editor::EffectDefinitions[i];
@@ -384,6 +458,7 @@ public:
 			
 			ImGui::SameLine();
 
+			ImGui::SameLine(ImGui::GetWindowContentRegionWidth() - 14);
 			sprintf(label, ICON_MD_ZOOM_IN "##%s%d", fx.name, i);
 			if (ImGui::Button(label)) {
 				Editor::SelectedObject = Editor::AttributeObject{
@@ -740,6 +815,14 @@ void Load()
 			ent.m_SpawnStart = spawn["start"];
 			ent.m_SpawnEnd = spawn["end"];
 
+			auto rotlim = fxentry["rotation"];
+			ent.m_RotLimitMin = rotlim["min"];
+			ent.m_RotLimitMax = rotlim["max"];
+
+			auto rot = fxentry["rotation_speed"];
+			ent.m_RotSpeedMin = rot["min"];
+			ent.m_RotSpeedMax = rot["max"];
+
 			switch (type) {
 				case ParticleType::Billboard:
 					ent.billboard = GetBillboardDef(name);
@@ -944,13 +1027,13 @@ void Style()
 	style.Colors[ImGuiCol_PopupBg] = ImVec4(0.18f, 0.18f, 0.19f, 1.0f);
 	style.Colors[ImGuiCol_Border] = ImVec4(0.25f, 0.25f, 0.27f, 1.00f);
 	style.Colors[ImGuiCol_BorderShadow] = ImVec4(0.00f, 0.00f, 0.00f, 0.0f);
-	style.Colors[ImGuiCol_FrameBg] = ImVec4(0.25f, 0.25f, 0.27f, 1.00f);
-	style.Colors[ImGuiCol_FrameBgHovered] = ImVec4(0.11f, 0.59f, 0.92f, 1.00f);
-	style.Colors[ImGuiCol_FrameBgActive] = ImVec4(0.00f, 0.47f, 0.78f, 1.00f);
+	style.Colors[ImGuiCol_FrameBg] =        SELECT_COLORS[2];//ImVec4(0.25f, 0.25f, 0.27f, 1.00f);
+	style.Colors[ImGuiCol_FrameBgHovered] = SELECT_COLORS[1];//ImVec4(0.11f, 0.59f, 0.92f, 1.00f);
+	style.Colors[ImGuiCol_FrameBgActive] =  SELECT_COLORS[0];//ImVec4(0.00f, 0.47f, 0.78f, 1.00f);
 	style.Colors[ImGuiCol_TitleBg] = ImVec4(1.00f, 0.725f, 0.0f, 1.00f);
 	style.Colors[ImGuiCol_TitleBgCollapsed] = ImVec4(1.00f, 0.725f, 0.0f, 1.00f);
 	style.Colors[ImGuiCol_TitleBgActive] = ImVec4(1.00f, 0.725f, 0.0f, 1.00f);
-	style.Colors[ImGuiCol_MenuBarBg] = accent;
+	style.Colors[ImGuiCol_MenuBarBg] = BUTTON_COLORS[1];
 	style.Colors[ImGuiCol_ScrollbarBg] = ImVec4(0.24f, 0.24f, 0.26f, 1.00f);
 	style.Colors[ImGuiCol_ScrollbarGrab] = ImVec4(0.41f, 0.41f, 0.41f, 1.00f);
 	style.Colors[ImGuiCol_ScrollbarGrabHovered] = ImVec4(0.62f, 0.62f, 0.62f, 1.00f);
@@ -959,12 +1042,12 @@ void Style()
 	style.Colors[ImGuiCol_CheckMark] = ImVec4(0.90f, 0.90f, 0.90f, 0.50f);
 	style.Colors[ImGuiCol_SliderGrab] = ImVec4(0.41f, 0.41f, 0.41f, 1.00f);
 	style.Colors[ImGuiCol_SliderGrabActive] = ImVec4(0.95f, 0.92f, 0.94f, 1.00f);
-	style.Colors[ImGuiCol_Button] = ImVec4(0.67f, 0.40f, 0.40f, 0.00f);
-	style.Colors[ImGuiCol_ButtonHovered] = ImVec4(0.11f, 0.59f, 0.92f, 1.00f);
-	style.Colors[ImGuiCol_ButtonActive] = ImVec4(0.00f, 0.47f, 0.78f, 1.00f);
-	style.Colors[ImGuiCol_Header] = ImVec4(0.25f, 0.25f, 0.27f, 1.00f);
-	style.Colors[ImGuiCol_HeaderHovered] = ImVec4(0.28f, 0.28f, 0.31f, 1.00f);
-	style.Colors[ImGuiCol_HeaderActive] = ImVec4(0.53f, 0.53f, 0.87f, 0.80f);
+	style.Colors[ImGuiCol_Button] = BUTTON_COLORS[0];
+	style.Colors[ImGuiCol_ButtonHovered] = BUTTON_COLORS[1];
+	style.Colors[ImGuiCol_ButtonActive] = BUTTON_COLORS[2];
+	style.Colors[ImGuiCol_Header] = SELECT_COLORS[2];//ImVec4(0.25f, 0.25f, 0.27f, 1.00f);
+	style.Colors[ImGuiCol_HeaderHovered] = SELECT_COLORS[1];//ImVec4(0.28f, 0.28f, 0.31f, 1.00f);
+	style.Colors[ImGuiCol_HeaderActive] = SELECT_COLORS[0];// ImVec4(0.53f, 0.53f, 0.87f, 0.80f);
 	style.Colors[ImGuiCol_Column] = ImVec4(0.50f, 0.50f, 0.50f, 1.00f);
 	style.Colors[ImGuiCol_ColumnHovered] = ImVec4(0.70f, 0.60f, 0.60f, 1.00f);
 	style.Colors[ImGuiCol_ColumnActive] = ImVec4(0.90f, 0.70f, 0.70f, 1.00f);

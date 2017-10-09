@@ -200,6 +200,7 @@
     <Image Include="Resources\nosmoke.ico" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="editor.json" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>

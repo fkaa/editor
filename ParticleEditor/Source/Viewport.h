@@ -113,7 +113,8 @@ public:
 		m_States(new CommonStates(ImwPlatformWindowDX11::s_pDevice)),
 		m_Sphere(ImwPlatformWindowDX11::s_pDevice),
 		m_RenderSize({}),
-		m_Dirty(true)
+		m_Dirty(true),
+		m_Dragging(false)
 	{
 		SetTitle(ICON_MD_VIDEOCAM " Viewport");
 		m_Effect->SetVertexColorEnabled(true);
@@ -224,19 +225,35 @@ public:
 
 		auto &io = ImGui::GetIO();
 
+		bool inside = ImGui::IsMouseHoveringWindow();
+		bool shiftdown = io.KeyShift;
 		//if ((1 << 15) & GetAsyncKeyState(VK_LMENU)) {
 		if (io.MouseDown[0]) {
 			auto drag = ImGui::GetIO().MouseDelta;
 
-			m_Camera->Rotate(drag.x * delta * 100, drag.y * delta * 100);
+			if (inside) {
+				m_Dragging = true;
+			}
+
+			if (m_Dragging)
+				m_Camera->Rotate(drag.x * (shiftdown ? 5 : 2.5f), drag.y * (shiftdown ? 5 : 2.5f));
 		}
 		else if (io.MouseDown[1]) {
 			auto drag = ImGui::GetIO().MouseDelta;
 
-			m_Camera->Pan(drag.x * delta * 100, drag.y * delta * 100);
+			if (inside) {
+				m_Dragging = true;
+			}
+
+			if (m_Dragging)
+				m_Camera->Pan(drag.x * (shiftdown ? 5 : 2.5f), drag.y * (shiftdown ? 5 : 2.5f));
+		}
+		else {
+			m_Dragging = false;
 		}
 		//}
-		m_Camera->Zoom(io.MouseWheel * delta * 100);
+		if (inside)
+			m_Camera->Zoom(io.MouseWheel * (shiftdown ? 25 : 10));
 
 		m_Camera->Update(cxt);
 
@@ -300,4 +317,5 @@ private:
 	ImVec2 m_RenderSize;
 	ImVec2 m_DisplaySize;
 	bool m_Dirty;
+	bool m_Dragging;
 };
