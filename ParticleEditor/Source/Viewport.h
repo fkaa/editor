@@ -9,6 +9,8 @@
 #include "External\DebugDraw.h"
 #include "External\Helpers.h"
 
+#include <imgui_internal.h>
+
 using namespace DirectX;
 using namespace ImWindow;
 
@@ -298,6 +300,42 @@ public:
 		FXSystem->update(m_Camera, delta * Editor::Speed);
 		FXSystem->render(m_Camera, m_States, m_DepthDSV, ImwPlatformWindowDX11::s_pRTV);
 		FXSystem->frame();
+
+
+
+		ImVec2 window_pos = ImGui::GetWindowPos() + ImVec2(10, 10);
+		ImGui::SetNextWindowPos(window_pos, ImGuiSetCond_Always);
+		ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.3f));
+		if (Editor::SelectedEffect) {
+			if (ImGui::Begin("Viewport:", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings))
+			{
+				ImGui::TextColored(FX_COLORS[0], FX_ICON " %s", Editor::SelectedEffect->name);
+				char label[128];
+				for (int j = 0; j < Editor::SelectedEffect->m_Count; j++) {
+					auto &entry = Editor::SelectedEffect->m_Entries[j];
+
+					switch (entry.type) {
+						case ParticleType::Billboard: {
+							auto def = entry.billboard;
+							sprintf(label, ICON_MD_SUBDIRECTORY_ARROW_RIGHT " " BILLBOARD_ICON " %s", def->name.c_str());
+							ImGui::TextColored(BILLBOARD_COLORS[0], " %s", label);
+						} break;
+						case ParticleType::Geometry: {
+							auto def = entry.geometry;
+							sprintf(label, ICON_MD_SUBDIRECTORY_ARROW_RIGHT " " GEOMETRY_ICON " %s", def->name.c_str());
+							ImGui::TextColored(GEOMETRY_COLORS[0], " %s", label);
+						} break;
+						case ParticleType::Trail: {
+							auto def = entry.trail.def;
+							sprintf(label, ICON_MD_SUBDIRECTORY_ARROW_RIGHT " " TRAIL_ICON " %s", def->name.c_str());
+							ImGui::Text(" %s", label);
+						} break;
+					}
+				}
+				ImGui::End();
+			}
+		}
+		ImGui::PopStyleColor();
 	}
 
 private:

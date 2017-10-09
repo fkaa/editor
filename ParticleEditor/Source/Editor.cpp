@@ -25,40 +25,20 @@
 
 #include <External/json.hpp>
 
-#define GEOMETRY_ICON ICON_MD_FILTER_HDR
-#define BILLBOARD_ICON ICON_MD_CROP_FREE
-#define TRAIL_ICON ICON_MD_GRAIN
-#define FX_ICON ICON_MD_PHOTO_FILTER
+static void ShowHelpMarker(const char* desc)
+{
+	ImGui::TextDisabled("(?)");
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::BeginTooltip();
+		ImGui::PushTextWrapPos(450.0f);
+		ImGui::TextUnformatted(desc);
+		ImGui::PopTextWrapPos();
+		ImGui::EndTooltip();
+	}
+}
 
-const ImVec4 FX_COLORS[3] = {
-	ImColor(0xFFBA68C8),
-	ImColor(0xFFAB47BC),
-	ImColor(0xFF9C27B0)
-};
 
-const ImVec4 BILLBOARD_COLORS[3] = {
-	ImColor(0xFF009688),
-	ImColor(0xFF00897B),
-	ImColor(0xFF00796B)
-};
-
-const ImVec4 GEOMETRY_COLORS[3] = {
-	ImColor(0xE91E63FF),
-	ImColor(0xD81B60FF),
-	ImColor(0xC2185BFF)
-};
-
-const ImVec4 BUTTON_COLORS[3] = {
-	ImColor(120, 144, 156, 0),
-	ImColor(96, 125, 139),
-	ImColor(84, 110, 122)
-};
-
-const ImVec4 SELECT_COLORS[3] = {
-	ImColor(117, 117, 117),
-	ImColor(97, 97, 97),
-	ImColor(66, 66, 66)
-};
 
 using json = nlohmann::json;
 
@@ -124,7 +104,11 @@ public:
 		ImGui::PushStyleColor(ImGuiCol_Button,        FX_COLORS[0]);
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, FX_COLORS[1]);
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive,  FX_COLORS[2]);
-		ImGui::Button(FX_ICON " [FX]");
+		if (ImGui::Button(FX_ICON " [FX]")) {
+			ParticleEffect effect = {};
+			snprintf(effect.name, 16, "FX#%d", Editor::EffectDefinitions.size());
+			Editor::EffectDefinitions.push_back(effect);
+		}
 		if (ImGui::IsItemHovered())
 			ImGui::SetTooltip("Create new Particle FX");
 		ImGui::PopStyleColor(3);
@@ -161,9 +145,11 @@ public:
 		ImGui::PushStyleColor(ImGuiCol_Button,        GEOMETRY_COLORS[0]);
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, GEOMETRY_COLORS[1]);
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive,  GEOMETRY_COLORS[2]);
-		ImGui::Button(GEOMETRY_ICON " [Geometry]");
+		if (ImGui::Button(GEOMETRY_ICON " [Sphere]")) {
+
+		}
 		if (ImGui::IsItemHovered())
-			ImGui::SetTooltip("Create new Geometry Particle");
+			ImGui::SetTooltip("Create new Sphere Particle");
 		ImGui::PopStyleColor(3);
 
 		ImGui::EndChild();
@@ -275,7 +261,9 @@ public:
 				ImGui::Separator();
 
 				auto &def = *entry.geometry;
-				ImGui::Text(GEOMETRY_ICON " %s", entry.geometry->name.c_str());
+				ImGui::Text(GEOMETRY_ICON " %s (" ICON_MD_LINK ")", entry.geometry->name.c_str());
+				ImGui::SameLine();
+				ShowHelpMarker("This will edit the referenced definition as well");
 				ImGui::Separator();
 
 				ImGui::DragFloat("lifetime", &def.lifetime);
@@ -300,6 +288,33 @@ public:
 				ImGui::ColorEdit4("start##Color", (float*)&def.m_ColorStart);
 				ImGui::ColorEdit4("end##Color",   (float*)&def.m_ColorEnd);
 
+			} break;
+			case Editor::AttributeType::Geometry: {
+				auto &def = Editor::GeometryDefinitions[Editor::SelectedObject.index];
+				ImGui::Text(GEOMETRY_ICON " %s", def.name.c_str());
+				ImGui::Separator();
+
+				ImGui::DragFloat("lifetime", &def.lifetime);
+				ImGui::DragFloat("gravity", &def.m_Gravity);
+
+				ImGui::Text("Noise");
+				ImGui::DragFloat("scale##noise", &def.m_NoiseScale, 0.005f);
+				ImGui::DragFloat("speed##noise", &def.m_NoiseSpeed, 0.005f);
+
+				ImGui::Text("Deform");
+				ComboFunc("easing##Deform", &def.m_DeformEasing);
+				ImGui::DragFloat("start##Deform", &def.m_DeformFactorStart, 0.005f);
+				ImGui::DragFloat("end##Deform", &def.m_DeformFactorEnd, 0.005f);
+
+				ImGui::Text("Size");
+				ComboFunc("easing##Size", &def.m_SizeEasing);
+				ImGui::DragFloat("start##Size", &def.m_SizeStart, 0.005f);
+				ImGui::DragFloat("end##Size", &def.m_SizeEnd, 0.005f);
+
+				ImGui::Text("Color");
+				ComboFunc("easing##Color", &def.m_ColorEasing);
+				ImGui::ColorEdit4("start##Color", (float*)&def.m_ColorStart);
+				ImGui::ColorEdit4("end##Color", (float*)&def.m_ColorEnd);
 			} break;
 			case Editor::AttributeType::None:
 				ImGui::Text("No selection");
@@ -402,23 +417,55 @@ public:
 
 	virtual void OnGui()
 	{
-		static int selected = 0;
+		static int billboard_selected = 0;
+		static int geom_selected = 0;
+		static int tab = 2;
+		ImGui::RadioButton(BILLBOARD_ICON "##billboard", &tab, (int)ParticleType::Billboard);
+		ImGui::SameLine();
+		ImGui::RadioButton(TRAIL_ICON "##trail", &tab, (int)ParticleType::Trail);
+		ImGui::SameLine();
+		ImGui::RadioButton(GEOMETRY_ICON "##geometry", &tab, (int)ParticleType::Geometry);
+		
 		ImGui::BeginChild("ParticleList", ImVec2(0, -ImGui::GetItemsLineHeightWithSpacing()), true);
-		for (int i = 0; i < MAX_BILLBOARD_PARTICLE_DEFINITIONS; i++)
-		{
-			auto &def = Editor::BillboardDefinitions[i];
-			if (def.name.empty())
-				continue;
+		switch ((ParticleType)tab) {
+			case ParticleType::Billboard: {
+				for (int i = 0; i < MAX_BILLBOARD_PARTICLE_DEFINITIONS; i++)
+				{
+					auto &def = Editor::BillboardDefinitions[i];
+					if (def.name.empty())
+						continue;
 
-			char label[128];
-			sprintf(label, ICON_MD_CROP_FREE " %s", def.name.c_str());
-			if (ImGui::Selectable(label, selected == i)) {
-				Editor::SelectedObject = {
-					Editor::AttributeType::Billboard,
-					i
-				};
-			}
+					char label[128];
+					sprintf(label, BILLBOARD_ICON " %s", def.name.c_str());
+					if (ImGui::Selectable(label, billboard_selected == i)) {
+						Editor::SelectedObject = {
+							Editor::AttributeType::Billboard,
+							i
+						};
+					}
+				}
+			} break;
+			case ParticleType::Geometry: {
+				for (int i = 0; i < MAX_BILLBOARD_PARTICLE_DEFINITIONS; i++)
+				{
+					auto &def = Editor::GeometryDefinitions[i];
+					if (def.name.empty())
+						continue;
+
+					char label[128];
+					sprintf(label, GEOMETRY_ICON " %s", def.name.c_str());
+					if (ImGui::Selectable(label, geom_selected == i)) {
+						Editor::SelectedObject = {
+							Editor::AttributeType::Geometry,
+							i
+						};
+					}
+				}
+			} break;
+			default:
+				break;
 		}
+
 		ImGui::EndChild();
 		ImGui::Button(ICON_MD_LIBRARY_ADD "");
 		ImGui::SameLine();
@@ -957,6 +1004,7 @@ void Run()
 	Load();
 	//Save();
 
+	EffectDefinitions.resize(128);
 
 	ImWindow::ImwWindowManagerDX11 manager;
 	manager.Init();
@@ -977,7 +1025,7 @@ void Run()
 	ConsoleOutput = new Output();
 
 	ConsoleOutput->AddLog("Particle Editor v0.1\n");
-	ConsoleOutput->AddLog("LMB to rotate, RMB to drag\n");
+	ConsoleOutput->AddLog("LMB to rotate, RMB to drag, MMB to zoom\n");
 	ConsoleOutput->AddLog("Ctrl-R to reload resources\n");
 
 	manager.Dock(viewport, E_DOCK_ORIENTATION_CENTER);
@@ -1025,7 +1073,7 @@ void Style()
 	style.Colors[ImGuiCol_WindowBg] = ImVec4(0.18f, 0.18f, 0.19f, 1.00f);
 	style.Colors[ImGuiCol_ChildWindowBg] = ImVec4(0.18f, 0.18f, 0.19f, 1.00f);
 	style.Colors[ImGuiCol_PopupBg] = ImVec4(0.18f, 0.18f, 0.19f, 1.0f);
-	style.Colors[ImGuiCol_Border] = ImVec4(0.25f, 0.25f, 0.27f, 1.00f);
+	style.Colors[ImGuiCol_Border] = SELECT_COLORS[2];
 	style.Colors[ImGuiCol_BorderShadow] = ImVec4(0.00f, 0.00f, 0.00f, 0.0f);
 	style.Colors[ImGuiCol_FrameBg] =        SELECT_COLORS[2];//ImVec4(0.25f, 0.25f, 0.27f, 1.00f);
 	style.Colors[ImGuiCol_FrameBgHovered] = SELECT_COLORS[1];//ImVec4(0.11f, 0.59f, 0.92f, 1.00f);

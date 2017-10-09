@@ -21,8 +21,8 @@
             },
             "deform": {
                 "start": -0.2,
-                "end": 0.4,
-                "function": "linear"
+                "end": 0.35,
+                "function": "easeout"
             },
             "size": {
                 "start": 0,
@@ -84,7 +84,7 @@
             "time": -1
         },
         {
-            "name": "Smoke",
+            "name": "FireSmoke",
             "time": 3,
 
             "entries": [
