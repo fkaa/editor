@@ -6,169 +6,243 @@
             "name": "DefaultBillboard"
         }
     ],
-    "geometry_definitions": [
-        {
-            "material_name": "FireSmokeMaterial",
-            "name": "FireSmokeSphere",
-            "lifetime": 6.0,
-            "gravity": 5.0,
-            "noise_scale": 0.045,
-            "noise_speed": 0.2,
-            "color": {
-                "start": [0.7, 0.215, 0.215, 1],
-                "end": [0.07, 0.07, 0.07, 1],
-                "function": "easeout"
-            },
-            "deform": {
-                "start": -0.2,
-                "end": 0.35,
-                "function": "easeout"
-            },
-            "size": {
-                "start": 0,
-                "end": 2.3,
-                "function": "easeout"
-            }
-        }
-    ],
-    "trail_definitions": [
-        {
-            "lifetime": 4.0,
-            "material_name": "trailMaterial",
-            "name": "Trail",
-            "frequency": 0.02,
-            "start_position": {
-                "min": [-0.01, -0.01, -0.01],
-                "max": [0.01, 0.01, 0.01]
-            },
-            "start_velocity": {
-                "min": [-0.1, -0.1, -0.1],
-                "max": [0.1, 0.1, 0.1]
-            },
-            "gravity": 8.2
-        }
-    ],
     "fx": [
         {
             "entries": [
                 {
                     "name": "DefaultBillboard",
-                    "type": "billboard",
-                    "start": 0,
-                    "time": 3,
-                    "spawn": {
-                        "start": 8,
-                        "end": 0,
-                        "function": "linear"
-                    },
-
-                    "start_position": {
-                        "min": [-0.01, -0.01, -0.01],
-                        "max": [0.01, 0.01, 0.01]
-                    },
-                    "start_velocity": {
-                        "min": [-0.1, -0.1, -0.1],
-                        "max": [0.1, 0.1, 0.1]
-                    },
                     "rotation": {
-                        "min": -0.2,
-                        "max": 0.2
+                        "max": 0.200000002980232,
+                        "min": -0.200000002980232
                     },
                     "rotation_speed": {
-                        "min": -1,
-                        "max": 1
-                    }
+                        "max": 1.0,
+                        "min": -1.0
+                    },
+                    "spawn": {
+                        "end": 0.0,
+                        "function": "linear",
+                        "start": 8.0
+                    },
+                    "start": 0.0,
+                    "start_position": {
+                        "max": [
+                            0.00999999977648258,
+                            0.00999999977648258,
+                            0.00999999977648258
+                        ],
+                        "min": [
+                            -0.00999999977648258,
+                            -0.00999999977648258,
+                            -0.00999999977648258
+                        ]
+                    },
+                    "start_velocity": {
+                        "max": [
+                            0.100000001490116,
+                            0.100000001490116,
+                            0.100000001490116
+                        ],
+                        "min": [
+                            -0.100000001490116,
+                            -0.100000001490116,
+                            -0.100000001490116
+                        ]
+                    },
+                    "time": 3.0,
+                    "type": "billboard"
                 }
             ],
             "name": "Billboard",
-            "time": -1
+            "time": 0.0
         },
         {
-            "name": "FireSmoke",
-            "time": 3,
-
             "entries": [
                 {
                     "name": "FireSmokeSphere",
-                    "type": "geometry",
-
-                    "start": 0,
-                    "time": 3,
-
-                    "spawn": {
-                        "start": 8,
-                        "end": 0,
-                        "function": "linear"
-                    },
-
-                    "start_position": {
-                        "min": [-0.11, -0.11, -0.11],
-                        "max": [0.11, 0.11, 0.11]
-                    },
-                    "start_velocity": {
-                        "min": [-0.11, 1.0, -0.11],
-                        "max": [0.11, 1.1, 0.11]
-                    },
                     "rotation": {
-                        "min": -0.1,
-                        "max": 0.1
+                        "max": 0.100000001490116,
+                        "min": -0.100000001490116
                     },
                     "rotation_speed": {
-                        "min": -1,
-                        "max": 1
-                    }
+                        "max": 1.0,
+                        "min": -1.0
+                    },
+                    "spawn": {
+                        "end": 0.0,
+                        "function": "linear",
+                        "start": 6.0
+                    },
+                    "start": 0.0,
+                    "start_position": {
+                        "max": [
+                            0.109999999403954,
+                            0.109999999403954,
+                            0.109999999403954
+                        ],
+                        "min": [
+                            -0.109999999403954,
+                            -0.109999999403954,
+                            -0.109999999403954
+                        ]
+                    },
+                    "start_velocity": {
+                        "max": [
+                            0.109999999403954,
+                            1.10000002384186,
+                            0.109999999403954
+                        ],
+                        "min": [
+                            -0.109999999403954,
+                            1.0,
+                            -0.109999999403954
+                        ]
+                    },
+                    "time": 3.0,
+                    "type": "geometry"
                 }
-            ]
+            ],
+            "name": "FireSmoke",
+            "time": 0.0
         },
         {
             "entries": [
                 {
-                    "name": "Trail",
-                    "type": "trail",
-                    "start": 0,
-                    "time": 3,
-                    "spawn": {
-                        "start": 8,
-                        "end": 0,
-                        "function": "linear"
-                    },
-
-                    "start_position": {
-                        "min": [-0.01, -0.01, -0.01],
-                        "max": [0.01, 0.01, 0.01]
-                    },
-                    "start_velocity": {
-                        "min": [-0.1, -0.1, -0.1],
-                        "max": [0.1, 0.1, 0.1]
-                    },
+                    "name": "FireExplosionSphere",
                     "rotation": {
-                        "min": -0.2,
-                        "max": 0.2
+                        "max": 0.100000001490116,
+                        "min": -0.100000001490116
                     },
                     "rotation_speed": {
-                        "min": -1,
-                        "max": 1
-                    }
+                        "max": 1.0,
+                        "min": -1.0
+                    },
+                    "spawn": {
+                        "end": 0.0,
+                        "function": "linear",
+                        "start": 6.0
+                    },
+                    "start": 0.0,
+                    "start_position": {
+                        "max": [
+                            0.109999999403954,
+                            0.109999999403954,
+                            0.109999999403954
+                        ],
+                        "min": [
+                            -0.109999999403954,
+                            -0.109999999403954,
+                            -0.109999999403954
+                        ]
+                    },
+                    "start_velocity": {
+                        "max": [
+                            0.109999999403954,
+                            1.10000002384186,
+                            0.109999999403954
+                        ],
+                        "min": [
+                            -0.109999999403954,
+                            1.0,
+                            -0.109999999403954
+                        ]
+                    },
+                    "time": 3.0,
+                    "type": "geometry"
                 }
             ],
-            "name": "Trail",
-            "time": -1
+            "name": "FireExplosion",
+            "time": 0.0
         }
     ],
-  "materials": [
-    {
-      "name": "Default",
-      "path": "Resources/Shaders/BillboardParticleSimple.hlsl"
-    },
-    {
-      "name": "FireSmokeMaterial",
-      "path": "Resources/Shaders/GeometryParticleSimple.hlsl"
-    },
-    {
-      "name": "trailMaterial",
-      "path": "Resources/Shaders/TrailParticleSimple.hlsl"
-    }
-  ],
+    "geometry_definitions": [
+        {
+            "color": {
+                "end": [
+                    0.0700000002980232,
+                    0.0700000002980232,
+                    0.0700000002980232,
+                    1.0
+                ],
+                "function": "easeout",
+                "start": [
+                    0.699999988079071,
+                    0.215000003576279,
+                    0.215000003576279,
+                    1.0
+                ]
+            },
+            "deform": {
+                "end": 0.349999994039536,
+                "function": "easeout",
+                "start": -0.200000002980232
+            },
+            "deform_speed": 16.7999992370605,
+            "gravity": 5.0,
+            "lifetime": 6.0,
+            "material_name": "GeometryFireSmoke",
+            "name": "FireSmokeSphere",
+            "noise_scale": 0.0450000017881393,
+            "noise_speed": 0.200000002980232,
+            "size": {
+                "end": 2.29999995231628,
+                "function": "easeout",
+                "start": 0.0
+            }
+        },
+        {
+            "color": {
+                "end": [
+                    0.0700000002980232,
+                    0.0700000002980232,
+                    0.0700000002980232,
+                    1.0
+                ],
+                "function": "easeout",
+                "start": [
+                    0.699999988079071,
+                    0.215000003576279,
+                    0.215000003576279,
+                    1.0
+                ]
+            },
+            "deform": {
+                "end": 0.349999994039536,
+                "function": "easeout",
+                "start": -0.200000002980232
+            },
+            "deform_speed": 16.7999992370605,
+            "gravity": 5.0,
+            "lifetime": 6.0,
+            "material_name": "GeometryFireSmoke",
+            "name": "FireExplosionSphere",
+            "noise_scale": 0.0450000017881393,
+            "noise_speed": 0.200000002980232,
+            "size": {
+                "end": 2.29999995231628,
+                "function": "easeout",
+                "start": 0.0
+            }
+        }
+    ],
+    "materials": [
+        {
+            "name": "Default",
+            "path": "Resources/Shaders/BillboardParticleSimple.hlsl"
+        },
+        {
+            "name": "GeometryDefault",
+            "path": "Resources/Shaders/GeometryDefault.hlsl"
+        },
+        {
+            "name": "GeometryFireSmoke",
+            "path": "Resources/Shaders/GeometryFireSmoke.hlsl"
+        },
+        {
+            "name": "trailMaterial",
+            "path": "Resources/Shaders/TrailParticleSimple.hlsl"
+        }
+    ],
     "textures": [
         {
             "name": "DefaultChecker",
@@ -185,6 +259,15 @@
         {
             "name": "Sphere",
             "path": "Resources/Textures/Sphere.png"
+        }
+    ],
+    "trail_definitions": [
+        {
+            "frequency": 0.0199999995529652,
+            "gravity": 8.19999980926514,
+            "lifetime": 4.0,
+            "material_name": "trailMaterial",
+            "name": "Trail"
         }
     ]
 }

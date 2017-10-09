@@ -115,6 +115,7 @@ struct GeometryParticleDefinition {
 	ParticleEase m_DeformEasing;
 	float m_DeformFactorStart;
 	float m_DeformFactorEnd;
+	float m_DeformSpeed;
 
 	ParticleEase m_SizeEasing;
 	float m_SizeStart;
@@ -151,6 +152,19 @@ inline ParticleEase GetEasingFromString(std::string str)
 	if (str == "easeout") return ParticleEase::EaseOut;
 
 	assert(false);
+}
+
+inline std::string GetEasingName(ParticleEase ease) {
+	switch (ease) {
+		case ParticleEase::Linear:
+			return "linear";
+		case ParticleEase::EaseIn:
+			return "easein";
+		case ParticleEase::EaseOut:
+			return "easeout";
+		default:
+			assert(false);
+	}
 }
 
 inline ParticleType ParticleTypeFromString(std::string str)
@@ -192,7 +206,7 @@ struct ParticleEffectEntry {
 };
 
 struct ParticleEffect {
-	char name[16] = "Untitled\0";
+	char name[16];
 	int m_Count;
 	float age;
 	float time;
@@ -209,8 +223,9 @@ struct BillboardParticle {
 struct GeometryParticle {
 	XMFLOAT3 pos;
 	XMFLOAT3 velocity;
-	XMFLOAT3 rotvel;
-	float rot;
+	float rotvel;
+	float rotprog;
+	XMFLOAT3 rot;
 	GeometryParticleDefinition *def;
 	float age;
 	int idx;
@@ -221,6 +236,7 @@ struct GeometryParticleInstance {
 	XMVECTOR m_Color;
 	float m_Age;
 	float m_Deform;
+	float m_DeformSpeed;
 	
 	float m_NoiseScale;
 	float m_NoiseSpeed;

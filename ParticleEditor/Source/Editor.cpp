@@ -232,36 +232,36 @@ public:
 			} break;
 			case Editor::AttributeType::GeometryEntry: {
 				auto &entry = Editor::SelectedEffect->m_Entries[Editor::SelectedObject.index];
-				ImGui::Text(FX_ICON " %s[%d] > " GEOMETRY_ICON " %s", Editor::SelectedEffect->name, Editor::SelectedObject.index, entry.geometry->name.c_str());
+				ImGui::TextColored(FX_COLORS[0], FX_ICON " %s[%d] > " GEOMETRY_ICON " %s", Editor::SelectedEffect->name, Editor::SelectedObject.index, entry.geometry->name.c_str());
 				ImGui::Separator();
 
 				ImGui::Text("Start Position");
-				ImGui::DragFloat3("min##start", (float*)&entry.m_StartPosition.m_Min, 0.05f);
-				ImGui::DragFloat3("max##start", (float*)&entry.m_StartPosition.m_Max, 0.05f);
+				ImGui::DragFloat3("min##start", (float*)&entry.m_StartPosition.m_Min, 0.005f);
+				ImGui::DragFloat3("max##start", (float*)&entry.m_StartPosition.m_Max, 0.005f);
 
 				ImGui::Text("Start Velocity");
-				ImGui::DragFloat3("min##vel", (float*)&entry.m_StartVelocity.m_Min, 0.05f);
-				ImGui::DragFloat3("max##vel", (float*)&entry.m_StartVelocity.m_Max, 0.05f);
+				ImGui::DragFloat3("min##vel", (float*)&entry.m_StartVelocity.m_Min, 0.005f);
+				ImGui::DragFloat3("max##vel", (float*)&entry.m_StartVelocity.m_Max, 0.005f);
 
 				ImGui::Text("Rotation Axis");
-				ImGui::DragFloat("min##rotaxis", &entry.m_RotLimitMin, 0.05f);
-				ImGui::DragFloat("max##rotaxis", &entry.m_RotLimitMax, 0.05f);
+				ImGui::DragFloat("min##rotaxis", &entry.m_RotLimitMin, 0.005f);
+				ImGui::DragFloat("max##rotaxis", &entry.m_RotLimitMax, 0.005f);
 
 
 				ImGui::Text("Rotation Speed");
-				ImGui::DragFloat("min##rotspeed", &entry.m_RotSpeedMin, 0.05f);
-				ImGui::DragFloat("max##rotspeed", &entry.m_RotSpeedMax, 0.05f);
+				ImGui::DragFloat("min##rotspeed", &entry.m_RotSpeedMin, 0.005f);
+				ImGui::DragFloat("max##rotspeed", &entry.m_RotSpeedMax, 0.005f);
 
 
 				ImGui::Text("Spawn Rate");
 				ComboFunc("easing##spawn", &entry.m_SpawnEasing);
-				ImGui::DragFloat("start##spawn", (float*)&entry.m_SpawnStart, 0.05f);
-				ImGui::DragFloat("end##spawn", (float*)&entry.m_SpawnEnd, 0.05f);
+				ImGui::DragFloat("start##spawn", (float*)&entry.m_SpawnStart, 0.005f);
+				ImGui::DragFloat("end##spawn", (float*)&entry.m_SpawnEnd, 0.005f);
 
 				ImGui::Separator();
 
 				auto &def = *entry.geometry;
-				ImGui::Text(GEOMETRY_ICON " %s (" ICON_MD_LINK ")", entry.geometry->name.c_str());
+				ImGui::TextColored(GEOMETRY_COLORS[0], GEOMETRY_ICON " %s (" ICON_MD_LINK ")", entry.geometry->name.c_str());
 				ImGui::SameLine();
 				ShowHelpMarker("This will edit the referenced definition as well");
 				ImGui::Separator();
@@ -274,6 +274,7 @@ public:
 				ImGui::DragFloat("speed##noise", &def.m_NoiseSpeed, 0.005f);
 
 				ImGui::Text("Deform");
+				ImGui::DragFloat("speed##Deform", &def.m_DeformSpeed, 0.005f);
 				ComboFunc("easing##Deform", &def.m_DeformEasing);
 				ImGui::DragFloat("start##Deform", &def.m_DeformFactorStart, 0.005f);
 				ImGui::DragFloat("end##Deform", &def.m_DeformFactorEnd, 0.005f);
@@ -291,7 +292,7 @@ public:
 			} break;
 			case Editor::AttributeType::Geometry: {
 				auto &def = Editor::GeometryDefinitions[Editor::SelectedObject.index];
-				ImGui::Text(GEOMETRY_ICON " %s", def.name.c_str());
+				ImGui::TextColored(GEOMETRY_COLORS[0], GEOMETRY_ICON " %s", def.name.c_str());
 				ImGui::Separator();
 
 				ImGui::DragFloat("lifetime", &def.lifetime);
@@ -302,6 +303,7 @@ public:
 				ImGui::DragFloat("speed##noise", &def.m_NoiseSpeed, 0.005f);
 
 				ImGui::Text("Deform");
+				ImGui::DragFloat("speed##Deform", &def.m_DeformSpeed, 0.005f);
 				ComboFunc("easing##Deform", &def.m_DeformEasing);
 				ImGui::DragFloat("start##Deform", &def.m_DeformFactorStart, 0.005f);
 				ImGui::DragFloat("end##Deform", &def.m_DeformFactorEnd, 0.005f);
@@ -808,6 +810,8 @@ void Load()
 		def.m_DeformEasing = GetEasingFromString(deform["function"]);
 		def.m_DeformFactorStart = deform["start"];
 		def.m_DeformFactorEnd = deform["end"];
+
+		def.m_DeformSpeed = entry["deform_speed"];
 		
 		auto size = entry["size"];
 		def.m_SizeEasing = GetEasingFromString(size["function"]);
@@ -828,8 +832,8 @@ void Load()
 		def.frequency = entry["frequency"];
 		def.m_Gravity = entry["gravity"];
 		def.m_Material = GetMaterial(entry["material_name"]);
-		def.m_StartPosition = GetPositionBox(entry, "start_position");
-		def.m_StartVelocity = GetVelocityBox(entry, "start_velocity");
+		//def.m_StartPosition = GetPositionBox(entry, "start_position");
+		//def.m_StartVelocity = GetVelocityBox(entry, "start_velocity");
 		//def.lifetime = entry["lifetime"];
 		*td++ = def;
 	}
@@ -902,20 +906,71 @@ void Save() {
 			continue;
 
 		json definition = {
-			{"name", def.name},
-			{"material_name", def.m_Material->m_MaterialName},
-			{"lifetime", def.lifetime },
+			{ "name", def.name },
+			{ "material_name", def.m_Material->m_MaterialName },
+			{ "lifetime", def.lifetime },
 			/*{"start",
-				{
-					"min", {def.m_StartPosition.m_Min.x, def.m_StartPosition.m_Min.y, def.m_StartPosition.m_Min.z }
-				},
-				{
-					"max", {def.m_StartPosition.m_Max.x, def.m_StartPosition.m_Max.y, def.m_StartPosition.m_Max.z }
-				}
+			{
+			"min", {def.m_StartPosition.m_Min.x, def.m_StartPosition.m_Min.y, def.m_StartPosition.m_Min.z }
+			},
+			{
+			"max", {def.m_StartPosition.m_Max.x, def.m_StartPosition.m_Max.y, def.m_StartPosition.m_Max.z }
+			}
 			}*/
 		};
 
 		j["billboard_definitions"].push_back(definition);
+	}
+
+	j["geometry_definitions"] = {};
+	for (int i = 0; i < MAX_BILLBOARD_PARTICLE_DEFINITIONS; i++) {
+		auto def = GeometryDefinitions[i];
+		if (def.name.empty())
+			continue;
+
+		json definition = {
+			{ "name", def.name },
+			{ "material_name", def.m_Material->m_MaterialName },
+			{ "lifetime", def.lifetime },
+			{ "gravity", def.m_Gravity },
+			{ "noise_scale", def.m_NoiseScale },
+			{ "noise_speed", def.m_NoiseSpeed },
+			{ "color", {
+				{ "start", { def.m_ColorStart.x, def.m_ColorStart.y, def.m_ColorStart.z, def.m_ColorStart.w } },
+				{ "end", { def.m_ColorEnd.x, def.m_ColorEnd.y, def.m_ColorEnd.z, def.m_ColorEnd.w } },
+				{ "function", GetEasingName(def.m_ColorEasing) }
+			}},
+			{ "deform", {
+				{ "start", def.m_DeformFactorStart },
+				{ "end", def.m_DeformFactorEnd },
+				{ "function", GetEasingName(def.m_DeformEasing) }
+			}},
+			{ "deform_speed", def.m_DeformSpeed },
+			{ "size", {
+				{ "start", def.m_SizeStart },
+				{ "end", def.m_SizeEnd },
+				{ "function", GetEasingName(def.m_SizeEasing) }
+			}}
+		};
+
+		j["geometry_definitions"].push_back(definition);
+	}
+
+	j["trail_definitions"] = {};
+	for (int i = 0; i < MAX_BILLBOARD_PARTICLE_DEFINITIONS; i++) {
+		auto def = TrailDefinitions[i];
+		if (def.name.empty())
+			continue;
+
+		json definition = {
+			{ "name", def.name },
+			{ "material_name", def.m_Material->m_MaterialName },
+			{ "lifetime", def.lifetime },
+			{ "gravity", def.m_Gravity },
+			{ "frequency", def.frequency }
+		};
+
+		j["trail_definitions"].push_back(definition);
 	}
 
 	j["materials"] = {};
@@ -956,22 +1011,49 @@ void Save() {
 			switch (pentry.type) {
 				case ParticleType::Trail:
 					entry["type"] = "trail";
+					entry["name"] = pentry.trail.def->name;
 					break;
 				case ParticleType::Billboard:
 					entry["type"] = "billboard";
 					entry["name"] = pentry.billboard->name;
 					break;
-				case ParticleType::Geometry:
+				case ParticleType::Geometry: {
 					entry["type"] = "geometry";
-					break;
+					entry["name"] = pentry.geometry->name;
+				} break;
 			}
+
+			entry["start"] = pentry.start;
+			entry["time"] = pentry.time;
+			entry["spawn"] = {
+				{ "start", pentry.m_SpawnStart },
+				{ "end", pentry.m_SpawnEnd },
+				{ "function", GetEasingName(pentry.m_SpawnEasing) }
+			};
+			entry["start_position"] = {
+				{ "min",{ pentry.m_StartPosition.m_Min.x, pentry.m_StartPosition.m_Min.y, pentry.m_StartPosition.m_Min.z } },
+				{ "max",{ pentry.m_StartPosition.m_Max.x, pentry.m_StartPosition.m_Max.y, pentry.m_StartPosition.m_Max.z } }
+			};
+			entry["start_velocity"] = {
+				{ "min",{ pentry.m_StartVelocity.m_Min.x, pentry.m_StartVelocity.m_Min.y, pentry.m_StartVelocity.m_Min.z } },
+				{ "max",{ pentry.m_StartVelocity.m_Max.x, pentry.m_StartVelocity.m_Max.y, pentry.m_StartVelocity.m_Max.z } }
+			};
+			entry["rotation"] = {
+				{ "min", pentry.m_RotLimitMin },
+				{ "max", pentry.m_RotLimitMax }
+			};
+			entry["rotation_speed"] = {
+				{ "min", pentry.m_RotSpeedMin },
+				{ "max", pentry.m_RotSpeedMax }
+			};
 
 			entries.push_back(entry);
 		}
 
 		json obj = {
 			{"entries", entries},
-			{"name", fx.name}
+			{"name", fx.name},
+			{"time", fx.time}
 		};
 		
 		j["fx"].push_back(obj);
@@ -1001,10 +1083,11 @@ void Run()
 	fx.m_Entries[0].billboard = &BillboardDefinitions[0];
 	EffectDefinitions.push_back(fx);*/
 
-	Load();
-	//Save();
+	EffectDefinitions.reserve(128);
 
-	EffectDefinitions.resize(128);
+	Load();
+	Save();
+
 
 	ImWindow::ImwWindowManagerDX11 manager;
 	manager.Init();
