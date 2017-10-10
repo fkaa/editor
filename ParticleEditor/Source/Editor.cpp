@@ -1093,23 +1093,61 @@ void Save() {
  *   fx_count: u32,
  *   fx: [ParticleEffect; fx_count]
  *
- *
- *
- *
  * Types:
- *   GeometryDefinition: {
- *
+ *   ParticleType: enum {
+ *     Trail = 0,
+ *     Billboard = 1,
+ *     Geometry = 2,
  *   }
  *
- *   ParticleEffectEntry: {
+ *   ParticleEase: enum {
+ *     Linear = 0,
+ *     EaseIn = 1,
+ *     EaseOut = 2,
+ *   }
  *
+ *   GeometryDefinition: struct {
+ *     mat_idx: i32,
+ *     lifetime: f32,
+ *     gravity: f32,
+ *     noise_scale: f32,
+ *     noise_speed: f32,
+ *     deform_easing: ParticleEase,
+ *     deform_start: f32,
+ *     deform_end: f32,
+ *     deform_speed: f32,
+ *     size_easing,
+ *     size_start,
+ *     size_end,
+ *     color_easing: ParticleEase,
+ *     color_start: [f32; 4],
+ *     color_end: [f32; 4],
+ *   }
+ *
+ *   ParticleEffectEntry: struct {
+ *     type: ParticleType,
+ *     def_idx: i32,
+ *     start: f32,
+ *     time: f32,
+ *     loop: bool,
+ *     start_position: [[f32; 3]; 2],
+ *     start_velocity: [[f32; 3]; 2],
+ *     spawn_easing: ParticleEase,
+ *     spawn_start: f32,
+ *     spawn_end: f32,
+ *     rot_limit_min: f32,
+ *     rot_limit_max: f32,
+ *     rot_speed_min: f32,
+ *     rot_speed_max: f32,
  *   }
  *
  *   ParticleEffect: {
- *
+ *     name: [char; 16],
+ *     count: u32,
+ *     time: f32,
+ *     entry_count: u32,
+ *     entries: [ParticleEffectEntry; entry_count],
  *   }
- *
- *
  */
 void Export(const char *file)
 {
@@ -1191,8 +1229,8 @@ void Export(const char *file)
 	uint32_t fx_count = EffectDefinitions.size();
 	fwrite(&fx_count, sizeof(uint32_t), 1, f);
 
-	for (int j = 0; j < fx_count; j++) {
-		auto &fx = EffectDefinitions[fx_count];
+	for (int j = 0; j < fx_count - 1; j++) {
+		auto &fx = EffectDefinitions[j];
 
 		fwrite(&fx.name, sizeof(fx.name), 1, f);
 		fwrite(&fx.m_Count, sizeof(uint32_t), 1, f);
