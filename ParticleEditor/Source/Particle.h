@@ -207,7 +207,7 @@ struct ParticleEffectEntry {
 
 struct ParticleEffect {
 	char name[16];
-	int m_Count;
+	unsigned int m_Count;
 	float age;
 	float time;
 	ParticleEffectEntry m_Entries[8];

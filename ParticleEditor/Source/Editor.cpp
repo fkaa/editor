@@ -5,6 +5,8 @@
 #include <vector>
 #include <algorithm>
 
+#include <cstdio>
+
 #include "External/DirectXTK.h"
 #include "External/Helpers.h"
 #include "External/dxerr.h"
@@ -68,9 +70,24 @@ public:
 
 			}
 
-			if (ImGui::MenuItem("Export", "CTRL+E", nullptr, false))
+			if (ImGui::MenuItem("Export", "CTRL+E", nullptr, true))
 			{
+				OPENFILENAMEA ofn;
+				char szFileName[MAX_PATH] = "";
 
+				ZeroMemory(&ofn, sizeof(ofn));
+
+				ofn.lStructSize = sizeof(ofn);
+				ofn.hwndOwner = ImwPlatformWindowDX11::s_mInstances.begin()->first;
+				ofn.lpstrFilter = "part Files (*.part)\0*.part\0All Files (*.*)\0*.*\0";
+				ofn.lpstrFile = szFileName;
+				ofn.nMaxFile = MAX_PATH;
+				ofn.Flags = OFN_EXPLORER | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT;
+				ofn.lpstrDefExt = "part";
+
+				if (GetSaveFileNameA(&ofn)) {
+					Editor::Export(ofn.lpstrFile);
+				}
 			}
 
 			ImGui::Separator();
@@ -1062,6 +1079,161 @@ void Save() {
 
 	std::ofstream o("editor.json");
 	o << std::setw(4) << j << std::endl;
+}
+
+/*
+ * File format:
+ *   magic: [char; 4],
+ *   texture_count: u32,
+ *   texture_paths: [[char; 128]; texture_count],
+ *   material_count: u32,
+ *   material_paths: [[char; 128]; material_count],
+ *   geometry_count: u32,
+ *   geometry: [GeometryDefinition; geometry_count],
+ *   fx_count: u32,
+ *   fx: [ParticleEffect; fx_count]
+ *
+ *
+ *
+ *
+ * Types:
+ *   GeometryDefinition: {
+ *
+ *   }
+ *
+ *   ParticleEffectEntry: {
+ *
+ *   }
+ *
+ *   ParticleEffect: {
+ *
+ *   }
+ *
+ *
+ */
+void Export(const char *file)
+{
+	FILE *f = fopen(file, "w+");
+	if (!f) {
+		char err[128];
+		strerror_s(err, errno);
+		ConsoleOutput->AddLog("Failed to export particle data to %s (%s)\n", file, err);
+	}
+
+	// magic 4-byte constant
+	char magic[4] = { 'p', 'a', 'r', 't' };
+	fwrite(magic, sizeof(magic), 1, f);
+
+	uint32_t texture_count = 0;
+
+	std::vector<std::array<char, 128>> paths;
+	for (; texture_count < MAX_MATERIAL_TEXTURES; texture_count++) {
+		auto &tex = MaterialTextures[texture_count];
+		if (tex.m_TextureName.empty())
+			break;
+
+		std::array<char, 128> path = { '\0' };
+		strcpy_s(path.data(), 128, tex.m_TextureName.c_str());
+
+		paths.push_back(path);
+	}
+
+	fwrite(&texture_count, sizeof(uint32_t), 1, f);
+	fwrite(paths.data(), sizeof(char[128]), texture_count, f);
+
+	paths.clear();
+
+	uint32_t material_count = 0;
+	for (; material_count < MAX_TRAIL_MATERIALS; material_count++) {
+		auto &mat = TrailMaterials[texture_count];
+		if (mat.m_MaterialName.empty())
+			break;
+
+		std::array<char, 128> path = {'\0'};
+		strcpy_s(path.data(), 127, mat.m_MaterialName.c_str());
+
+		paths.push_back(path);
+	}
+
+	fwrite(&material_count, sizeof(uint32_t), 1, f);
+	fwrite(paths.data(), sizeof(char[128]), material_count, f);
+
+	uint32_t geometry_count = 0;
+	for (; geometry_count < MAX_BILLBOARD_PARTICLE_DEFINITIONS; geometry_count++) {
+		auto &def = GeometryDefinitions[geometry_count];
+		if (def.name.empty())
+			break;
+	}
+
+	fwrite(&geometry_count, sizeof(uint32_t), 1, f);
+
+	for (int i = 0; i < geometry_count; i++) {
+		auto &def = GeometryDefinitions[i];
+		
+		int32_t mat_idx = (def.m_Material - Editor::TrailMaterials);
+		fwrite(&mat_idx, sizeof(int32_t), 1, f);
+		fwrite(&def.lifetime, sizeof(float), 1, f);
+		fwrite(&def.m_Gravity, sizeof(float), 1, f);
+		fwrite(&def.m_NoiseScale, sizeof(float), 1, f);
+		fwrite(&def.m_NoiseSpeed, sizeof(float), 1, f);
+		fwrite(&def.m_DeformEasing, sizeof(ParticleEase), 1, f);
+		fwrite(&def.m_DeformFactorStart, sizeof(float), 1, f);
+		fwrite(&def.m_DeformFactorEnd, sizeof(float), 1, f);
+		fwrite(&def.m_DeformSpeed, sizeof(float), 1, f);
+		fwrite(&def.m_SizeEasing, sizeof(ParticleEase), 1, f);
+		fwrite(&def.m_SizeStart, sizeof(float), 1, f);
+		fwrite(&def.m_SizeEnd, sizeof(float), 1, f);
+		fwrite(&def.m_ColorEasing, sizeof(ParticleEase), 1, f);
+		fwrite(&def.m_ColorStart, sizeof(SimpleMath::Vector4), 1, f);
+		fwrite(&def.m_ColorEnd, sizeof(SimpleMath::Vector4), 1, f);
+	}
+
+	uint32_t fx_count = EffectDefinitions.size();
+	fwrite(&fx_count, sizeof(uint32_t), 1, f);
+
+	for (int j = 0; j < fx_count; j++) {
+		auto &fx = EffectDefinitions[fx_count];
+
+		fwrite(&fx.name, sizeof(fx.name), 1, f);
+		fwrite(&fx.m_Count, sizeof(uint32_t), 1, f);
+		fwrite(&fx.time, sizeof(float), 1, f);
+
+		uint32_t entry_count = fx.m_Count;
+
+		for (int i = 0; i < entry_count; i++) {
+			auto &entry = fx.m_Entries[i];
+
+			fwrite(&entry.type, sizeof(ParticleType), 1, f);
+			switch (entry.type) {
+				case ParticleType::Geometry: {
+					int32_t def_idx = entry.geometry - GeometryDefinitions;
+					fwrite(&def_idx, sizeof(int32_t), 1, f);
+				} break;
+				default:
+					break;
+			}
+
+			fwrite(&entry.start, sizeof(float), 1, f);
+			fwrite(&entry.time, sizeof(float), 1, f);
+			fwrite(&entry.m_Loop, sizeof(bool), 1, f);
+			fwrite(&entry.m_StartPosition.m_Min, sizeof(SimpleMath::Vector3), 1, f);
+			fwrite(&entry.m_StartPosition.m_Max, sizeof(SimpleMath::Vector3), 1, f);
+			fwrite(&entry.m_StartVelocity.m_Min, sizeof(SimpleMath::Vector3), 1, f);
+			fwrite(&entry.m_StartVelocity.m_Max, sizeof(SimpleMath::Vector3), 1, f);
+			fwrite(&entry.m_SpawnEasing, sizeof(ParticleEase), 1, f);
+			fwrite(&entry.m_SpawnStart, sizeof(float), 1, f);
+			fwrite(&entry.m_SpawnEnd, sizeof(float), 1, f);
+			fwrite(&entry.m_RotLimitMin, sizeof(float), 1, f);
+			fwrite(&entry.m_RotLimitMax, sizeof(float), 1, f);
+			fwrite(&entry.m_RotSpeedMin, sizeof(float), 1, f);
+			fwrite(&entry.m_RotSpeedMax, sizeof(float), 1, f);
+		}
+	}
+
+
+	fclose(f);
+
+	ConsoleOutput->AddLog("Exported particle data to %s\n", file);
 }
 
 void Run()
