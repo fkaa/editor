@@ -139,7 +139,7 @@ struct BillboardParticleDefinition {
 	float lifetime;
 };
 
-enum class ParticleType {
+enum class ParticleType : uint32_t {
 	Trail,
 	Billboard,
 	Geometry

@@ -196,7 +196,8 @@ void ParticleSystem::update(Camera *cam, float dt)
 
 
 		auto it = m_GeometryParticles.begin();
-		while (it != m_GeometryParticles.end()) {
+		int i = 0;
+		while (it != m_GeometryParticles.end() && i < 256) {
 			auto &particle = *it;
 			auto def = *particle.def;
 
@@ -229,6 +230,7 @@ void ParticleSystem::update(Camera *cam, float dt)
 
 			it++;
 			ptr++;
+			i++;
 			// todo: remove
 		}
 		m_GeometryInstanceBuffer->Unmap(cxt);
@@ -320,7 +322,7 @@ void ParticleSystem::ReadSphereModel()
 	m_GeometryBuffer = new VertexBuffer<SphereVertex>(device, BufferUsageImmutable, BufferAccessNone, vertexcount, &vertices[0]);
 	m_GeometryIndexBuffer = new IndexBuffer<UINT16>(device, BufferUsageImmutable, BufferAccessNone, indexcount, &indices[0]);
 
-	m_GeometryInstanceBuffer = new VertexBuffer<GeometryParticleInstance>(device, BufferUsageDynamic, BufferAccessWrite, 128);
+	m_GeometryInstanceBuffer = new VertexBuffer<GeometryParticleInstance>(device, BufferUsageDynamic, BufferAccessWrite, 256);
 
 	ID3DBlob *blob = compile_shader(L"Resources/Shaders/GeometryParticle.hlsl", "VS", "vs_5_0", device);
 	DXCALL(device->CreateVertexShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, &m_DefaultGeometryVS));
@@ -346,7 +348,7 @@ void ParticleSystem::ReadSphereModel()
 
 }
 
-void ParticleSystem::render(Camera *cam, CommonStates *states, ID3D11DepthStencilView *dst_dsv, ID3D11RenderTargetView *dst_rtv)
+void ParticleSystem::render(Camera *cam, CommonStates *states, ID3D11DepthStencilView *dst_dsv, ID3D11RenderTargetView *dst_rtv, bool debug)
 {
 
 	ID3D11SamplerState *samplers[] = {

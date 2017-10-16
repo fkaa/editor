@@ -78,6 +78,7 @@ extern Output *ConsoleOutput;
 
 extern float Speed;
 
+extern bool Debug;
 extern bool UnsavedChanges;
 extern AttributeObject SelectedObject;
 

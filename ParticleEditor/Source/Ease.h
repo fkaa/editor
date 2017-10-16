@@ -40,7 +40,7 @@ EASE_FUNC(XMVECTOR, EaseOut, EaseOutFactor)
 
 }
 
-enum class ParticleEase {
+enum class ParticleEase : uint32_t {
 	Linear = 0,
 	EaseIn,
 	EaseOut,

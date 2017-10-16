@@ -298,7 +298,7 @@ public:
 		cxt->ClearDepthStencilView(m_DepthDSV, D3D11_CLEAR_DEPTH, 1.f, 0);
 
 		FXSystem->update(m_Camera, delta * Editor::Speed);
-		FXSystem->render(m_Camera, m_States, m_DepthDSV, ImwPlatformWindowDX11::s_pRTV);
+		FXSystem->render(m_Camera, m_States, m_DepthDSV, ImwPlatformWindowDX11::s_pRTV, Editor::Debug);
 		FXSystem->frame();
 
 

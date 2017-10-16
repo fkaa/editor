@@ -215,9 +215,9 @@ public:
 			case Editor::AttributeType::Texture: {
 				MaterialTexture &tex = Editor::MaterialTextures[Editor::SelectedObject.index];
 				ImGui::Text("Texture");
-
+				auto w = ImGui::GetContentRegionAvailWidth();
 				if (tex.m_SRV)
-					ImGui::Image(tex.m_SRV, ImVec2(128, 128));
+					ImGui::Image(tex.m_SRV, ImVec2(w, w));
 
 				tex.m_TextureName.resize(128, '\0');
 				ImGui::InputText("Name", (char*)tex.m_TextureName.data(), 120);
@@ -283,8 +283,8 @@ public:
 				ShowHelpMarker("This will edit the referenced definition as well");
 				ImGui::Separator();
 
-				ImGui::DragFloat("lifetime", &def.lifetime);
-				ImGui::DragFloat("gravity", &def.m_Gravity);
+				ImGui::DragFloat("lifetime", &def.lifetime, 0.005f);
+				ImGui::DragFloat("gravity", &def.m_Gravity, 0.005f);
 
 				ImGui::Text("Noise");
 				ImGui::DragFloat("scale##noise", &def.m_NoiseScale, 0.005f);
@@ -592,6 +592,7 @@ Output *ConsoleOutput;
 
 float Speed = 1.f;
 
+bool Debug = false;
 bool UnsavedChanges = true;
 AttributeObject SelectedObject;
 
@@ -1116,9 +1117,9 @@ void Save() {
  *     deform_start: f32,
  *     deform_end: f32,
  *     deform_speed: f32,
- *     size_easing,
- *     size_start,
- *     size_end,
+ *     size_easing: ParticleEase,
+ *     size_start: f32,
+ *     size_end: f32,
  *     color_easing: ParticleEase,
  *     color_start: [f32; 4],
  *     color_end: [f32; 4],
@@ -1267,7 +1268,6 @@ void Export(const char *file)
 			fwrite(&entry.m_RotSpeedMax, sizeof(float), 1, f);
 		}
 	}
-
 
 	fclose(f);
 
