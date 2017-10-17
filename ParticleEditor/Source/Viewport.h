@@ -8,6 +8,7 @@
 #include "External\DirectXTK.h"
 #include "External\DebugDraw.h"
 #include "External\Helpers.h"
+#include "External\ImGuizmo.h"
 
 #include <imgui_internal.h>
 
@@ -134,6 +135,8 @@ public:
 			OnResize(display.x, display.y);
 		}
 
+		XMStoreFloat4x4(&m_ParticlePosition, XMMatrixTranslation(0, 0, 0));
+
 		FXSystem = new ParticleSystem(L"", 2048, 0, 0, device, cxt);
 	}
 
@@ -203,7 +206,6 @@ public:
 			m_DisplaySize = display;
 		}
 
-
 		// if need to refresh and we dont have lmb down (resizing), recreate
 		// resources dependent on viewport size
 		if (m_Dirty) {
@@ -211,6 +213,8 @@ public:
 			m_RenderSize = size;
 			m_Dirty = false;
 		}
+
+		ImGuizmo::SetRect(min.x, min.y, m_RenderSize.x, m_RenderSize.y);
 
 		D3D11_VIEWPORT viewport = {};
 		viewport.TopLeftX = min.x;
@@ -230,31 +234,36 @@ public:
 		bool inside = ImGui::IsMouseHoveringWindow();
 		bool shiftdown = io.KeyShift;
 		//if ((1 << 15) & GetAsyncKeyState(VK_LMENU)) {
-		if (io.MouseDown[0]) {
-			auto drag = ImGui::GetIO().MouseDelta;
+		bool gizmo = ImGuizmo::IsOver() || ImGuizmo::IsUsing();
+		
+		if (!gizmo) {
+			if (io.MouseDown[0]) {
+				auto drag = ImGui::GetIO().MouseDelta;
 
-			if (inside) {
-				m_Dragging = true;
+				if (inside) {
+					m_Dragging = true;
+				}
+
+				if (m_Dragging)
+					m_Camera->Rotate(drag.x * (shiftdown ? 5 : 2.5f), drag.y * (shiftdown ? 5 : 2.5f));
 			}
+			else if (io.MouseDown[1]) {
+				auto drag = ImGui::GetIO().MouseDelta;
 
-			if (m_Dragging)
-				m_Camera->Rotate(drag.x * (shiftdown ? 5 : 2.5f), drag.y * (shiftdown ? 5 : 2.5f));
-		}
-		else if (io.MouseDown[1]) {
-			auto drag = ImGui::GetIO().MouseDelta;
+				if (inside) {
+					m_Dragging = true;
+				}
 
-			if (inside) {
-				m_Dragging = true;
+				if (m_Dragging)
+					m_Camera->Pan(drag.x * (shiftdown ? 5 : 2.5f), drag.y * (shiftdown ? 5 : 2.5f));
 			}
-
-			if (m_Dragging)
-				m_Camera->Pan(drag.x * (shiftdown ? 5 : 2.5f), drag.y * (shiftdown ? 5 : 2.5f));
-		}
-		else {
-			m_Dragging = false;
+			else {
+				m_Dragging = false;
+			}
 		}
 		//}
-		if (inside)
+
+		if (!gizmo && inside)
 			m_Camera->Zoom(io.MouseWheel * (shiftdown ? 25 : 10));
 
 		m_Camera->Update(cxt);
@@ -287,9 +296,22 @@ public:
 		cxt->PSSetShaderResources(0, MAX_MATERIAL_TEXTURES, SRVs);
 		cxt->OMSetBlendState(m_States->AlphaBlend(), nullptr, 0xFFFFFFFF);
 
+
 		if (Editor::SelectedEffect) {
-			FXSystem->ProcessFX(Editor::SelectedEffect, XMMatrixTranslation(0, 0, 0), delta * Editor::Speed);
+
+
+			XMFLOAT4X4 view, proj;
+
+			XMStoreFloat4x4(&view, m_Camera->GetView());
+			XMStoreFloat4x4(&proj, m_Camera->GetProjection());
+
+			ImGuizmo::Manipulate((float*)view.m, (float*)proj.m, ImGuizmo::TRANSLATE, ImGuizmo::WORLD, (float*)m_ParticlePosition.m, nullptr, nullptr, nullptr, nullptr);
+			auto pos = XMLoadFloat4x4(&m_ParticlePosition);
+
+			FXSystem->ProcessFX(Editor::SelectedEffect, pos, delta * Editor::Speed);
 		
+
+
 			if (Editor::SelectedEffect->age >= Editor::SelectedEffect->time) {
 				Editor::SelectedEffect->age = 0;
 			}
@@ -352,6 +374,7 @@ private:
 
 	SkySphere m_Sphere;
 
+	XMFLOAT4X4 m_ParticlePosition;
 	ImVec2 m_RenderSize;
 	ImVec2 m_DisplaySize;
 	bool m_Dirty;

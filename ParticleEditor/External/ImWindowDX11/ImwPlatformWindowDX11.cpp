@@ -1,6 +1,7 @@
 #include "ImwPlatformWindowDX11.h"
 
 #include "ImwWindowManager.h"
+#include "../ImGuizmo.h"
 
 //#include <DxErr.h>
 #include "../dxerr.h"
@@ -285,6 +286,7 @@ void ImwPlatformWindowDX11::Render()
 		ImGui::Render();
 
 		ImGui_ImplDX11_NewFrame();
+		ImGuizmo::BeginFrame();
 
 		if (this == s_pLastHoveredWindow)
 		{

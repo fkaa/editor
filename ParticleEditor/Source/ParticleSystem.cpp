@@ -214,7 +214,7 @@ void ParticleSystem::update(Camera *cam, float dt)
 
 			auto scale = ease_size(def.m_SizeStart, def.m_SizeEnd, factor);
 
-			ptr->m_Model = XMMatrixRotationAxis(XMLoadFloat3(&particle.rot), (particle.rotprog + particle.age) * particle.rotvel)  * XMMatrixTranslationFromVector(XMLoadFloat3(&particle.pos))* XMMatrixScaling(scale, scale, scale);
+			ptr->m_Model = XMMatrixRotationAxis(XMLoadFloat3(&particle.rot), (particle.rotprog + particle.age) * particle.rotvel)  * XMMatrixScaling(scale, scale, scale) * XMMatrixTranslationFromVector(XMLoadFloat3(&particle.pos));
 			ptr->m_Age = factor;
 			
 			ptr->m_Color = ease_color(def.m_ColorStart, def.m_ColorEnd, factor);

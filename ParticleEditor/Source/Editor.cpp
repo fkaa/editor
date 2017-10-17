@@ -102,7 +102,7 @@ public:
 
 		if (ImGui::BeginMenu("Settings")) {
 			ImGui::DragFloat("speed##settings", &Editor::Speed, 0.01f, 0.f, 5.f, "%.1fx speed");
-
+			ImGui::Checkbox("debug##settings", &Editor::Debug);
 			ImGui::EndMenu();
 		}
 	}
