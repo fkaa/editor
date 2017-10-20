@@ -10,6 +10,7 @@
 int (WINAPIV * __vsnprintf)(char *, size_t, const char*, va_list) = _vsnprintf;
 
 #include "Win32MessageHelper.h">
+#include "Keyboard.h"
 
 #pragma comment (lib, "d3d11.lib")
 //#pragma comment (lib, "d3dx11.lib")
@@ -33,7 +34,6 @@ ImwPlatformWindow*						ImwPlatformWindowDX11::s_pLastHoveredWindow = NULL;
 
 INT64									ImwPlatformWindowDX11::g_Time = 0;
 INT64									ImwPlatformWindowDX11::g_TicksPerSecond = 0;
-
 
 IMGUI_API void							ImGui_ImplDX11_RenderDrawLists(ImDrawData* draw_data);
 
@@ -500,10 +500,13 @@ LRESULT ImwPlatformWindowDX11::OnMessage(UINT message, WPARAM wParam, LPARAM lPa
 		s_pLastHoveredWindow = this;
 		return 1;
 	case WM_KEYDOWN:
+		Keyboard::ProcessMessage(message, wParam, lParam);
 		if (wParam < 256)
 			io.KeysDown[wParam] = 1;
 		break;
 	case WM_KEYUP:
+		Keyboard::ProcessMessage(message, wParam, lParam);
+
 		if (wParam < 256)
 			io.KeysDown[wParam] = 0;
 		break;
@@ -512,6 +515,10 @@ LRESULT ImwPlatformWindowDX11::OnMessage(UINT message, WPARAM wParam, LPARAM lPa
 		if (wParam > 0 && wParam < 0x10000)
 			io.AddInputCharacter((unsigned short)wParam);
 		return 1;
+	case WM_SYSKEYDOWN:
+	case WM_SYSKEYUP:
+		Keyboard::ProcessMessage(message, wParam, lParam);
+		break;
 	}
 
 	return DefWindowProcA(m_hWnd, message, wParam, lParam);

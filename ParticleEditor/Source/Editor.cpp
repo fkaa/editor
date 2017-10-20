@@ -40,8 +40,6 @@ static void ShowHelpMarker(const char* desc)
 	}
 }
 
-
-
 using json = nlohmann::json;
 
 class MyMenu : public ImwMenu
@@ -592,6 +590,7 @@ Output *ConsoleOutput;
 
 float Speed = 1.f;
 
+bool Paused = false;
 bool Debug = false;
 bool UnsavedChanges = true;
 AttributeObject SelectedObject;

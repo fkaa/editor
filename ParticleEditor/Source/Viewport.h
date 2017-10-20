@@ -115,9 +115,12 @@ public:
 		m_Effect(new BasicEffect(ImwPlatformWindowDX11::s_pDevice)),
 		m_States(new CommonStates(ImwPlatformWindowDX11::s_pDevice)),
 		m_Sphere(ImwPlatformWindowDX11::s_pDevice),
+		m_Keyboard(new Keyboard()),
 		m_RenderSize({}),
 		m_Dirty(true),
-		m_Dragging(false)
+		m_GizmoActive(false),
+		m_Dragging(false),
+		m_AutoRotate(false)
 	{
 		SetTitle(ICON_MD_VIDEOCAM " Viewport");
 		m_Effect->SetVertexColorEnabled(true);
@@ -145,6 +148,7 @@ public:
 		delete m_Batch;
 		delete m_Effect;
 		delete m_States;
+		delete m_Keyboard;
 	}
 
 	void OnResize(int width, int height)
@@ -182,6 +186,18 @@ public:
 
 	virtual void OnGui() override
 	{
+		auto state = m_Keyboard->GetState();
+		m_Tracker.Update(state);
+
+		if (m_Tracker.pressed.G)
+			m_GizmoActive = !m_GizmoActive;
+
+		if (m_Tracker.pressed.P)
+			Editor::Paused = !Editor::Paused;
+
+		if (m_Tracker.pressed.R)
+			m_AutoRotate = !m_AutoRotate;
+
 		auto min = GetLastPosition();
 		auto max = GetLastSize();
 		auto size = max;
@@ -235,6 +251,10 @@ public:
 		bool shiftdown = io.KeyShift;
 		//if ((1 << 15) & GetAsyncKeyState(VK_LMENU)) {
 		bool gizmo = ImGuizmo::IsOver() || ImGuizmo::IsUsing();
+
+		if (m_AutoRotate) {
+			m_Camera->Rotate(delta * 15.f, 0.f);
+		}
 		
 		if (!gizmo) {
 			if (io.MouseDown[0]) {
@@ -298,17 +318,17 @@ public:
 
 
 		if (Editor::SelectedEffect) {
-
-
 			XMFLOAT4X4 view, proj;
 
 			XMStoreFloat4x4(&view, m_Camera->GetView());
 			XMStoreFloat4x4(&proj, m_Camera->GetProjection());
 
-			ImGuizmo::Manipulate((float*)view.m, (float*)proj.m, ImGuizmo::TRANSLATE, ImGuizmo::WORLD, (float*)m_ParticlePosition.m, nullptr, nullptr, nullptr, nullptr);
+			if (m_GizmoActive) {
+				ImGuizmo::Manipulate((float*)view.m, (float*)proj.m, ImGuizmo::TRANSLATE, ImGuizmo::WORLD, (float*)m_ParticlePosition.m, nullptr, nullptr, nullptr, nullptr);
+			}
 			auto pos = XMLoadFloat4x4(&m_ParticlePosition);
 
-			FXSystem->ProcessFX(Editor::SelectedEffect, pos, delta * Editor::Speed);
+			FXSystem->ProcessFX(Editor::SelectedEffect, pos, delta * Editor::Speed * (Editor::Paused ? 0.f : 1.f));
 		
 
 
@@ -319,7 +339,7 @@ public:
 
 		cxt->ClearDepthStencilView(m_DepthDSV, D3D11_CLEAR_DEPTH, 1.f, 0);
 
-		FXSystem->update(m_Camera, delta * Editor::Speed);
+		FXSystem->update(m_Camera, delta * Editor::Speed * (Editor::Paused ? 0.f : 1.f));
 		FXSystem->render(m_Camera, m_States, m_DepthDSV, ImwPlatformWindowDX11::s_pRTV, Editor::Debug);
 		FXSystem->frame();
 
@@ -371,6 +391,9 @@ private:
 	PrimitiveBatch<VertexPositionColor> *m_Batch;
 	BasicEffect *m_Effect;
 	CommonStates *m_States;
+	Keyboard *m_Keyboard;
+	Keyboard::KeyboardStateTracker m_Tracker;
+
 
 	SkySphere m_Sphere;
 
@@ -378,5 +401,7 @@ private:
 	ImVec2 m_RenderSize;
 	ImVec2 m_DisplaySize;
 	bool m_Dirty;
+	bool m_GizmoActive;
 	bool m_Dragging;
+	bool m_AutoRotate;
 };
