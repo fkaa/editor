@@ -127,6 +127,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>

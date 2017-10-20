@@ -4,6 +4,8 @@
 
 #include <vector>
 #include <algorithm>
+#include <fstream>
+#include <experimental\filesystem>
 
 #include <cstdio>
 
@@ -41,6 +43,8 @@ static void ShowHelpMarker(const char* desc)
 }
 
 using json = nlohmann::json;
+namespace fs = std::experimental::filesystem;
+
 
 class MyMenu : public ImwMenu
 {
@@ -80,7 +84,7 @@ public:
 				ofn.lpstrFilter = "part Files (*.part)\0*.part\0All Files (*.*)\0*.*\0";
 				ofn.lpstrFile = szFileName;
 				ofn.nMaxFile = MAX_PATH;
-				ofn.Flags = OFN_EXPLORER | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT;
+				ofn.Flags = OFN_NOCHANGEDIR | OFN_EXPLORER | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT;
 				ofn.lpstrDefExt = "part";
 
 				if (GetSaveFileNameA(&ofn)) {
@@ -1149,8 +1153,18 @@ void Save() {
  *     entries: [ParticleEffectEntry; entry_count],
  *   }
  */
+void CopyFileDst(const char *srcpath, const char *dstpath)
+{
+	std::ifstream source(srcpath, std::ios::binary);
+	std::ofstream dest(dstpath, std::ios::binary);
+
+	dest << source.rdbuf();
+}
+
 void Export(const char *file)
 {
+	fs::path export_dir = fs::path(file).parent_path();
+
 	FILE *f = fopen(file, "w+");
 	if (!f) {
 		char err[128];
@@ -1170,8 +1184,9 @@ void Export(const char *file)
 		if (tex.m_TextureName.empty())
 			break;
 
+		auto filepath = fs::path(tex.m_TexturePath).filename().generic_string();
 		std::array<char, 128> path = { '\0' };
-		strcpy_s(path.data(), 128, tex.m_TextureName.c_str());
+		strcpy_s(path.data(), 128, filepath.c_str());
 
 		paths.push_back(path);
 	}
@@ -1183,12 +1198,13 @@ void Export(const char *file)
 
 	uint32_t material_count = 0;
 	for (; material_count < MAX_TRAIL_MATERIALS; material_count++) {
-		auto &mat = TrailMaterials[texture_count];
+		auto &mat = TrailMaterials[material_count];
 		if (mat.m_MaterialName.empty())
 			break;
 
+		auto filepath = fs::path(mat.m_ShaderPath).filename().generic_string();
 		std::array<char, 128> path = {'\0'};
-		strcpy_s(path.data(), 127, mat.m_MaterialName.c_str());
+		strcpy_s(path.data(), 127, filepath.c_str());
 
 		paths.push_back(path);
 	}
@@ -1229,7 +1245,7 @@ void Export(const char *file)
 	uint32_t fx_count = EffectDefinitions.size();
 	fwrite(&fx_count, sizeof(uint32_t), 1, f);
 
-	for (int j = 0; j < fx_count - 1; j++) {
+	for (int j = 0; j < fx_count; j++) {
 		auto &fx = EffectDefinitions[j];
 
 		fwrite(&fx.name, sizeof(fx.name), 1, f);
@@ -1248,6 +1264,8 @@ void Export(const char *file)
 					fwrite(&def_idx, sizeof(int32_t), 1, f);
 				} break;
 				default:
+					int32_t temp = 0;
+					fwrite(&temp, sizeof(int32_t), 1, f);
 					break;
 			}
 
@@ -1269,6 +1287,30 @@ void Export(const char *file)
 	}
 
 	fclose(f);
+
+	ConsoleOutput->AddLog("Copying textures to export directory:\n");
+	for (auto &mat : MaterialTextures) {
+		if (mat.m_TextureName.empty())
+			break;
+
+		auto filename = fs::path(mat.m_TexturePath).filename().generic_string();
+		auto export_path = (export_dir.generic_string() + "/" + filename);
+		CopyFileDst(mat.m_TexturePath.c_str(), export_path.c_str());
+
+		ConsoleOutput->AddLog("  :CopyFile %s -> %s\n", mat.m_TexturePath.c_str(), export_path.c_str());
+	}
+
+	ConsoleOutput->AddLog("Copying shaders to export directory:\n");
+	for (auto &mat : TrailMaterials) {
+		if (mat.m_MaterialName.empty())
+			break;
+
+		auto filename = fs::path(mat.m_ShaderPath).filename().generic_string();
+		auto export_path = (export_dir.generic_string() + "/" + filename);
+		CopyFileDst(mat.m_ShaderPath.c_str(), export_path.c_str());
+
+		ConsoleOutput->AddLog("  :CopyFile %s -> %s\n", mat.m_ShaderPath.c_str(), export_path.c_str());
+	}
 
 	ConsoleOutput->AddLog("Exported particle data to %s\n", file);
 }
