@@ -63,11 +63,11 @@ public:
 
 			}
 
-			if (ImGui::MenuItem("Save", "CTRL+O", nullptr, false))
+			if (ImGui::MenuItem("Save", "CTRL+S", nullptr, true))
 			{
-
+				Editor::Save();
 			}
-			if (ImGui::MenuItem("Save As", "CTRL+O", nullptr, false))
+			if (ImGui::MenuItem("Save As", "CTRL+S", nullptr, false))
 			{
 
 			}
@@ -104,6 +104,7 @@ public:
 
 		if (ImGui::BeginMenu("Settings")) {
 			ImGui::DragFloat("speed##settings", &Editor::Speed, 0.01f, 0.f, 5.f, "%.1fx speed");
+			ImGui::Checkbox("paused##settings", &Editor::Paused);
 			ImGui::Checkbox("debug##settings", &Editor::Debug);
 			ImGui::EndMenu();
 		}
@@ -313,6 +314,12 @@ public:
 				auto &def = Editor::GeometryDefinitions[Editor::SelectedObject.index];
 				ImGui::TextColored(GEOMETRY_COLORS[0], GEOMETRY_ICON " %s", def.name.c_str());
 				ImGui::Separator();
+
+				def.name.resize(128, '\0');
+				ImGui::InputText("Name", (char*)def.name.data(), 120);
+
+				int idx = def.m_Material - Editor::TrailMaterials;
+				MaterialCombo(&idx);
 
 				ImGui::DragFloat("lifetime", &def.lifetime);
 				ImGui::DragFloat("gravity", &def.m_Gravity);
@@ -1317,28 +1324,10 @@ void Export(const char *file)
 
 void Run()
 {
-	/*TrailMaterials[0].m_MaterialName = "Default";
-	TrailMaterials[0].m_ShaderPath = "Resources/Shaders/BillboardParticleSimple.hlsl";
-	MaterialTextures[0].m_TextureName = "DefaultChecker";
-	MaterialTextures[0].m_TexturePath = "Resources/Textures/Plane.dds";
-	MaterialTextures[1].m_TextureName = "Noise";
-	MaterialTextures[1].m_TexturePath = "Resources/Textures/Noise.png";
-
-	BillboardDefinitions[0].name = "DefaultBillboard";
-	BillboardDefinitions[0].lifetime = -1.f;
-	BillboardDefinitions[0].m_Material = &TrailMaterials[0];
-
-	ParticleEffect fx = {};
-	fx.m_Count = 1;
-	fx.m_Entries[0].type = ParticleType::Billboard;
-	fx.m_Entries[0].billboard = &BillboardDefinitions[0];
-	EffectDefinitions.push_back(fx);*/
-
 	EffectDefinitions.reserve(128);
 
 	Load();
 	Save();
-
 
 	ImWindow::ImwWindowManagerDX11 manager;
 	manager.Init();

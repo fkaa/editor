@@ -99,6 +99,8 @@ TrailParticleDefinition *GetTrailDef(std::string name);
 
 TrailParticleMaterial *GetMaterial(std::string name);
 
+void Save();
+
 void Export(const char *file);
 void Reload(ID3D11Device *device);
 void Run();

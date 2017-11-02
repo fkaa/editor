@@ -11,6 +11,7 @@ int (WINAPIV * __vsnprintf)(char *, size_t, const char*, va_list) = _vsnprintf;
 
 #include "Win32MessageHelper.h">
 #include "Keyboard.h"
+#include "Mouse.h"
 
 #pragma comment (lib, "d3d11.lib")
 //#pragma comment (lib, "d3dx11.lib")
@@ -474,27 +475,35 @@ LRESULT ImwPlatformWindowDX11::OnMessage(UINT message, WPARAM wParam, LPARAM lPa
 		break;
 
 	case WM_LBUTTONDOWN:
+		Mouse::ProcessMessage(message, wParam, lParam);
 		io.MouseDown[0] = true;
 		return 1;
 	case WM_LBUTTONUP:
+		Mouse::ProcessMessage(message, wParam, lParam);
 		io.MouseDown[0] = false;
 		return 1;
 	case WM_RBUTTONDOWN:
+		Mouse::ProcessMessage(message, wParam, lParam);
 		io.MouseDown[1] = true; 
 		return 1;
 	case WM_RBUTTONUP:
+		Mouse::ProcessMessage(message, wParam, lParam);
 		io.MouseDown[1] = false; 
 		return 1;
 	case WM_MBUTTONDOWN:
+		Mouse::ProcessMessage(message, wParam, lParam);
 		io.MouseDown[2] = true; 
 		return 1;
 	case WM_MBUTTONUP:
+		Mouse::ProcessMessage(message, wParam, lParam);
 		io.MouseDown[2] = false; 
 		return 1;
 	case WM_MOUSEWHEEL:
+		Mouse::ProcessMessage(message, wParam, lParam);
 		io.MouseWheel += GET_WHEEL_DELTA_WPARAM(wParam) / WHEEL_DELTA;
 		return 1;
 	case WM_MOUSEMOVE:
+		Mouse::ProcessMessage(message, wParam, lParam);
 		io.MousePos.x = (signed short)(lParam);
 		io.MousePos.y = (signed short)(lParam >> 16);
 		s_pLastHoveredWindow = this;

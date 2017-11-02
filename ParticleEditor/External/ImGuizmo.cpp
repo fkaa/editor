@@ -727,7 +727,7 @@ namespace ImGuizmo
       gContext.mCameraEye = viewInverse.v.position;
       gContext.mCameraRight = viewInverse.v.right;
       gContext.mCameraUp = viewInverse.v.up;
-      gContext.mScreenFactor = 0.1f * GetUniform(gContext.mModel.v.position, gContext.mViewProjection);
+      gContext.mScreenFactor = 0.05f * GetUniform(gContext.mModel.v.position, gContext.mViewProjection);
 
       ImVec2 centerSSpace = worldToPos(makeVect(0.f, 0.f), gContext.mMVP);
       gContext.mScreenSquareCenter = centerSSpace;

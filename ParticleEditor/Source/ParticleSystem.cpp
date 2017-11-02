@@ -390,10 +390,13 @@ void ParticleSystem::render(Camera *cam, CommonStates *states, ID3D11DepthStenci
 
 		cxt->OMSetDepthStencilState(states->DepthDefault(), 0);
 		cxt->OMSetRenderTargets(1, &dst_rtv, dst_dsv);
-		cxt->RSSetState(states->CullNone());
+
+		if (debug)
+			cxt->RSSetState(states->Wireframe());
+		else
+			cxt->RSSetState(states->CullNone());
 
 		for (int i = 0; i < m_GeometryParticles.size(); i++) {
-		//if (!m_GeometryParticles.empty()) {
 			cxt->PSSetShader(Editor::TrailMaterials[m_GeometryParticles[i].idx].m_PixelShader, nullptr, 0);
 			cxt->DrawIndexedInstanced(m_GeometryIndices, 1, 0, 0, i);
 		}

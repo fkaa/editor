@@ -115,6 +115,7 @@ public:
 		m_Effect(new BasicEffect(ImwPlatformWindowDX11::s_pDevice)),
 		m_States(new CommonStates(ImwPlatformWindowDX11::s_pDevice)),
 		m_Sphere(ImwPlatformWindowDX11::s_pDevice),
+		m_Mouse(new Mouse()),
 		m_Keyboard(new Keyboard()),
 		m_RenderSize({}),
 		m_Dirty(true),
@@ -186,6 +187,8 @@ public:
 
 	virtual void OnGui() override
 	{
+		auto mstate = m_Mouse->GetState();
+		m_MTracker.Update(mstate);
 		auto state = m_Keyboard->GetState();
 		m_Tracker.Update(state);
 
@@ -256,11 +259,12 @@ public:
 			m_Camera->Rotate(delta * 15.f, 0.f);
 		}
 		
+		
 		if (!gizmo) {
 			if (io.MouseDown[0]) {
 				auto drag = ImGui::GetIO().MouseDelta;
 
-				if (inside) {
+				if (m_MTracker.leftButton == Mouse::ButtonStateTracker::ButtonState::PRESSED && inside) {
 					m_Dragging = true;
 				}
 
@@ -270,7 +274,7 @@ public:
 			else if (io.MouseDown[1]) {
 				auto drag = ImGui::GetIO().MouseDelta;
 
-				if (inside) {
+				if (m_MTracker.rightButton == Mouse::ButtonStateTracker::ButtonState::PRESSED && inside) {
 					m_Dragging = true;
 				}
 
@@ -303,7 +307,7 @@ public:
 		BoundingBox box;
 		box.Center = { 0, 0, 0 };
 		box.Extents = { 0.5f, 0.5f, 0.5f };
-		DX::Draw(m_Batch, box, Colors::MediumAquamarine);
+		//DX::Draw(m_Batch, box, Colors::MediumAquamarine);
 
 		m_Batch->End();
 		
@@ -316,7 +320,6 @@ public:
 		cxt->PSSetShaderResources(0, MAX_MATERIAL_TEXTURES, SRVs);
 		cxt->OMSetBlendState(m_States->AlphaBlend(), nullptr, 0xFFFFFFFF);
 
-
 		if (Editor::SelectedEffect) {
 			XMFLOAT4X4 view, proj;
 
@@ -324,6 +327,7 @@ public:
 			XMStoreFloat4x4(&proj, m_Camera->GetProjection());
 
 			if (m_GizmoActive) {
+				ImGuizmo::Enable(!m_Dragging && gizmo);
 				ImGuizmo::Manipulate((float*)view.m, (float*)proj.m, ImGuizmo::TRANSLATE, ImGuizmo::WORLD, (float*)m_ParticlePosition.m, nullptr, nullptr, nullptr, nullptr);
 			}
 			auto pos = XMLoadFloat4x4(&m_ParticlePosition);
@@ -342,8 +346,6 @@ public:
 		FXSystem->update(m_Camera, delta * Editor::Speed * (Editor::Paused ? 0.f : 1.f));
 		FXSystem->render(m_Camera, m_States, m_DepthDSV, ImwPlatformWindowDX11::s_pRTV, Editor::Debug);
 		FXSystem->frame();
-
-
 
 		ImVec2 window_pos = ImGui::GetWindowPos() + ImVec2(10, 10);
 		ImGui::SetNextWindowPos(window_pos, ImGuiSetCond_Always);
@@ -391,6 +393,9 @@ private:
 	PrimitiveBatch<VertexPositionColor> *m_Batch;
 	BasicEffect *m_Effect;
 	CommonStates *m_States;
+	Mouse *m_Mouse;
+	Mouse::ButtonStateTracker m_MTracker;
+
 	Keyboard *m_Keyboard;
 	Keyboard::KeyboardStateTracker m_Tracker;
 
