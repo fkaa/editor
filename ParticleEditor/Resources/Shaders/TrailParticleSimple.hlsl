@@ -70,3 +70,8 @@ float4 PS(GSOut input) : SV_Target0
 	float4 col = lerp(float4(1, 1, 1, 1), float4(1, 1, 1, 0), input.uv.y);
 	return col;//float4(input.uv, 0, 1);
 }
+
+void PS_depth(GSOut input)
+{
+
+}

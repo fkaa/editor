@@ -59,3 +59,22 @@ float4 PS(PSInput input) : SV_Target0
 	return float4(e * col + f, 1);
 	//return float4(input.color.xyz + 0.025 * diffuse, 1);
 }
+
+void PS_depth(PSInput input)
+{
+    float noise = Noise.SampleLevel(Sampler, input.noisescale*input.uv + float2(0, input.noisespeed), 0).g;
+    float noise2 = Noise.SampleLevel(Sampler, input.noisescale*input.uv + float2(input.age*input.noisespeed, 0), 0).b;
+    float noise3 = Noise.SampleLevel(Sampler, 0.1*input.uv + float2(0, input.age*input.noisespeed), 0).r;
+
+    float emissive = 0.1;
+    float ambient = 0.04;
+    float diffuse = max(dot(normalize(input.normal * (noise3 * 2 - 1)), lightDir), 0);
+
+    float cap = 1 - input.age;
+
+    clip(
+        saturate(
+            step(0.13, (noise*cap*0.95))
+        ) - 0.005
+    );
+}

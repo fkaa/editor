@@ -114,4 +114,19 @@ float4 PS(GSOut input) : SV_Target0
 	return float4(emissive, 1);
 }
 
+void PS_depth(GSOut input)
+{
+    float4 mask = Mask.Sample(Sampler, input.uv);
+    float t = input.age * 0.05;
 
+    float4 noise1 = Noise.Sample(Sampler, 0.25*input.uv + t*float2(0, 0.5));
+    float4 noise2 = Noise.Sample(Sampler, 0.15*input.uv + t*float2(0, 1));
+
+    float distort = pow(noise1.r + noise2.g, 4);
+    float falloff = input.uv.y;
+
+    float bsize = 3.f;
+
+    float N = ((mask.b*bsize) + ((3.9*distort * mask.r) * (mask.g * falloff))) * falloff;
+    clip(saturate(step(0.5 + input.uv.y, N)) - 0.5);
+}

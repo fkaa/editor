@@ -250,10 +250,20 @@ public:
 
 				def.m_Material = &Editor::TrailMaterials[idx];
 			} break;
+            case Editor::AttributeType::Effect: {
+                auto &fx = Editor::EffectDefinitions[Editor::SelectedObject.index];
+                ImGui::TextColored(FX_COLORS[0], FX_ICON " %s", Editor::SelectedEffect->name);
+                ImGui::Separator();
+
+                ImGui::InputText("Name", fx.name, 15);
+                ImGui::DragFloat("Time", &fx.time, 0.005f, 0.f, 50.f);
+            } break;
 			case Editor::AttributeType::GeometryEntry: {
 				auto &entry = Editor::SelectedEffect->m_Entries[Editor::SelectedObject.index];
 				ImGui::TextColored(FX_COLORS[0], FX_ICON " %s[%d] > " GEOMETRY_ICON " %s", Editor::SelectedEffect->name, Editor::SelectedObject.index, entry.geometry->name.c_str());
 				ImGui::Separator();
+
+                ImGui::DragFloat("time##entry", &entry.time, 0.005f);
 
 				ImGui::Text("Start Position");
 				ImGui::DragFloat3("min##start", (float*)&entry.m_StartPosition.m_Min, 0.005f);
@@ -674,7 +684,7 @@ GeometryParticleDefinition *GetGeometryDef(std::string name)
 	return nullptr;
 }
 
-TrailParticleDefinition * GetTrailDef(std::string name)
+TrailParticleDefinition *GetTrailDef(std::string name)
 {
 	for (int i = 0; i < MAX_BILLBOARD_PARTICLE_DEFINITIONS; i++) {
 		auto &def = TrailDefinitions[i];
@@ -867,13 +877,15 @@ void Load()
 	}
 
 	auto effects = data.at("fx");
-	for (auto entry : effects) {
-		
-		ParticleEffect fx = {};
-		std::string name = entry["name"];
-		memcpy(fx.name, name.data(), min(name.size(), 15));
-		for (int i = name.size(); i < 15; i++)
-			fx.name[i] = '\0';
+    for (auto entry : effects) {
+
+        ParticleEffect fx = {};
+        std::string name = entry["name"];
+        memcpy(fx.name, name.data(), min(name.size(), 15));
+        for (int i = name.size(); i < 15; i++)
+            fx.name[i] = '\0';
+        fx.time = entry["time"];
+        fx.loop = entry["loop"];
 
 		auto entries = entry["entries"];
 		for (auto fxentry : entries) {
@@ -1078,10 +1090,11 @@ void Save() {
 			entries.push_back(entry);
 		}
 
-		json obj = {
-			{"entries", entries},
-			{"name", fx.name},
-			{"time", fx.time}
+        json obj = {
+            {"entries", entries},
+            {"name", fx.name},
+            {"time", fx.time},
+			{"loop", fx.loop}
 		};
 		
 		j["fx"].push_back(obj);
@@ -1172,7 +1185,7 @@ void Export(const char *file)
 {
 	fs::path export_dir = fs::path(file).parent_path();
 
-	FILE *f = fopen(file, "w+");
+	FILE *f = fopen(file, "wb+");
 	if (!f) {
 		char err[128];
 		strerror_s(err, errno);
@@ -1257,40 +1270,59 @@ void Export(const char *file)
 
 		fwrite(&fx.name, sizeof(fx.name), 1, f);
 		fwrite(&fx.m_Count, sizeof(uint32_t), 1, f);
-		fwrite(&fx.time, sizeof(float), 1, f);
+        fwrite(&fx.time, sizeof(float), 1, f);
+        fwrite(&fx.loop, sizeof(bool), 1, f);
 
 		uint32_t entry_count = fx.m_Count;
 
 		for (int i = 0; i < entry_count; i++) {
 			auto &entry = fx.m_Entries[i];
 
-			fwrite(&entry.type, sizeof(ParticleType), 1, f);
+            struct BParticleEffectEntry {
+                ParticleType m_Type;
+                int32_t      m_DefinitionIdx;
+                float        m_Start;
+                float        m_Time;
+                int32_t      m_Loop;
+                PosBox       m_StartPosition;
+                VelocityBox  m_StartVelocity;
+                ParticleEase m_SpawnEasing;
+                float        m_SpawnStart;
+                float        m_SpawnEnd;
+                float        m_RotLimitMin;
+                float        m_RotLimitMax;
+                float        m_RotSpeedMin;
+                float        m_RotSpeedMax;
+            };
+
+            BParticleEffectEntry bentry;
+            bentry.m_Type = entry.type;
 			switch (entry.type) {
 				case ParticleType::Geometry: {
 					int32_t def_idx = entry.geometry - GeometryDefinitions;
-					fwrite(&def_idx, sizeof(int32_t), 1, f);
+                    bentry.m_DefinitionIdx = def_idx;
 				} break;
 				default:
 					int32_t temp = 0;
-					fwrite(&temp, sizeof(int32_t), 1, f);
-					break;
+                    bentry.m_DefinitionIdx = temp;
+                    break;
 			}
 
-			fwrite(&entry.start, sizeof(float), 1, f);
-			fwrite(&entry.time, sizeof(float), 1, f);
-			fwrite(&entry.m_Loop, sizeof(bool), 1, f);
-			fwrite(&entry.m_StartPosition.m_Min, sizeof(SimpleMath::Vector3), 1, f);
-			fwrite(&entry.m_StartPosition.m_Max, sizeof(SimpleMath::Vector3), 1, f);
-			fwrite(&entry.m_StartVelocity.m_Min, sizeof(SimpleMath::Vector3), 1, f);
-			fwrite(&entry.m_StartVelocity.m_Max, sizeof(SimpleMath::Vector3), 1, f);
-			fwrite(&entry.m_SpawnEasing, sizeof(ParticleEase), 1, f);
-			fwrite(&entry.m_SpawnStart, sizeof(float), 1, f);
-			fwrite(&entry.m_SpawnEnd, sizeof(float), 1, f);
-			fwrite(&entry.m_RotLimitMin, sizeof(float), 1, f);
-			fwrite(&entry.m_RotLimitMax, sizeof(float), 1, f);
-			fwrite(&entry.m_RotSpeedMin, sizeof(float), 1, f);
-			fwrite(&entry.m_RotSpeedMax, sizeof(float), 1, f);
-		}
+            bentry.m_Start = entry.start;
+            bentry.m_Time = entry.time;
+            bentry.m_Loop = entry.m_Loop;
+            bentry.m_StartPosition = entry.m_StartPosition;
+            bentry.m_StartVelocity = entry.m_StartVelocity;
+            bentry.m_SpawnEasing = entry.m_SpawnEasing;
+            bentry.m_SpawnStart = entry.m_SpawnStart;
+            bentry.m_SpawnEnd = entry.m_SpawnEnd;
+            bentry.m_RotLimitMin = entry.m_RotLimitMin;
+            bentry.m_RotLimitMax = entry.m_RotLimitMax;
+            bentry.m_RotSpeedMin = entry.m_RotSpeedMin;
+            bentry.m_RotSpeedMax = entry.m_RotSpeedMax;
+
+            fwrite(&bentry, sizeof(BParticleEffectEntry), 1, f);
+        }
 	}
 
 	fclose(f);

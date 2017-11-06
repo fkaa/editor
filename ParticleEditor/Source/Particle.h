@@ -186,7 +186,7 @@ struct ParticleEffectEntry {
 
 	float start;
 	float time;
-	bool m_Loop;
+	int32_t m_Loop;
 	float m_SpawnedParticles;
 
 	PosBox m_StartPosition;
@@ -210,6 +210,7 @@ struct ParticleEffect {
 	unsigned int m_Count;
 	float age;
 	float time;
+    bool loop;
 	ParticleEffectEntry m_Entries[8];
 };
 
