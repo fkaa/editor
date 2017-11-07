@@ -263,7 +263,3 @@ __pycache__/
 *.pyc
 /Engine/packages.config
 /Graphics/packages.config
-/ParticleEditor/Resources/Textures/maskFire.png
-/ParticleEditor/Resources/Textures
-/ParticleEditor/Resources/Shaders/smoke.hlsl
-/ParticleEditor/Resources/Shaders/brazier.hlsl

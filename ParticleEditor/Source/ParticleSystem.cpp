@@ -226,7 +226,8 @@ void ParticleSystem::update(Camera *cam, float dt)
 			particle.age += dt;
 			particle.rotprog += dt;
 
-			XMStoreFloat3(&particle.pos, XMLoadFloat3(&particle.pos) + XMLoadFloat3(&particle.velocity) * dt);
+            XMStoreFloat3(&particle.velocity, XMLoadFloat3(&particle.velocity) + XMVECTOR {0, def.m_Gravity, 0 } * dt);
+            XMStoreFloat3(&particle.pos, XMLoadFloat3(&particle.pos) + XMLoadFloat3(&particle.velocity) * dt);
 
 			it++;
 			ptr++;
