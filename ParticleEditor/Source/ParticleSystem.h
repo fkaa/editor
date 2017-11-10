@@ -25,6 +25,21 @@ struct SphereVertex {
 	XMFLOAT2 uv;
 };
 
+struct DirectionalLight
+{
+    XMFLOAT4 position;
+    XMFLOAT3 color;
+    XMFLOAT3 ambient;
+};
+
+struct Light
+{
+    XMFLOAT3 position;
+    float    range;
+    XMFLOAT3 color;
+    float    intensity;
+};
+
 class ParticleSystem {
 public:
 	ParticleSystem(const wchar_t *file, UINT capacity, UINT width, UINT height, ID3D11Device *device, ID3D11DeviceContext *cxt);

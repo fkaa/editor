@@ -206,6 +206,9 @@
   <ItemGroup>
     <None Include="editor.json" />
     <None Include="packages.config" />
+    <None Include="Resources\Shaders\include\Camera.hlsli" />
+    <None Include="Resources\Shaders\include\LightCalc.hlsli" />
+    <None Include="Resources\Shaders\include\Particles.hlsli" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc" />

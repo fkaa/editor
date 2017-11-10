@@ -316,8 +316,8 @@ public:
 			auto &mat = Editor::MaterialTextures[i];
 			SRVs[i] = mat.m_SRV;
 		}
-		cxt->VSSetShaderResources(0, MAX_MATERIAL_TEXTURES, SRVs);
-		cxt->PSSetShaderResources(0, MAX_MATERIAL_TEXTURES, SRVs);
+		cxt->VSSetShaderResources(4, MAX_MATERIAL_TEXTURES-4, SRVs);
+		cxt->PSSetShaderResources(4, MAX_MATERIAL_TEXTURES-4, SRVs);
 		cxt->OMSetBlendState(m_States->AlphaBlend(), nullptr, 0xFFFFFFFF);
 
 		if (Editor::SelectedEffect) {
