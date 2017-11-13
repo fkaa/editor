@@ -30,6 +30,7 @@ struct DirectionalLight
     XMFLOAT4 position;
     XMFLOAT3 color;
     XMFLOAT3 ambient;
+    float _padding[2];
 };
 
 struct Light
@@ -39,6 +40,14 @@ struct Light
     XMFLOAT3 color;
     float    intensity;
 };
+
+
+struct LightBuffer {
+    uint32_t LightCount;
+    uint32_t padding[3];
+    Light Lights[128];
+};
+static int a = sizeof(LightBuffer);
 
 class ParticleSystem {
 public:
@@ -66,6 +75,10 @@ public:
 	std::vector<GeometryParticle> m_GeometryParticles;
 	std::vector<Trail> m_TrailParticles;
 
+    LightBuffer m_ParticleLights;
+
+    ConstantBuffer<DirectionalLight> *m_DirectionalLight;
+    ConstantBuffer<LightBuffer> *m_Lights;
 	int m_GeometryIndices;
 	VertexBuffer<SphereVertex> *m_GeometryBuffer;
 	IndexBuffer<UINT16> *m_GeometryIndexBuffer;

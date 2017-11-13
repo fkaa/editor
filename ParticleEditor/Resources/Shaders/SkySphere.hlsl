@@ -1,9 +1,6 @@
-cbuffer Camera : register(b0)
-{
-	float4x4 View;
-	float4x4 Proj;
-	float4 Pos;
-}
+#include "include/Camera.hlsli"
+
+cbuffer cb0 : register(b0) { Camera camera; };
 
 struct VSInput {
 	float3 position : POSITION;
@@ -25,7 +22,7 @@ VSOut VS(VSInput input)
 	output.uv = input.uv;
 	output.wposition = input.position;
 
-	output.position = mul(Proj, mul(View, float4(input.position*100.f, 1.0)));
+	output.position = mul(camera.viewProjection, float4(input.position*100.f, 1.0));
 	output.position.w = output.position.z;
 
 	return output;

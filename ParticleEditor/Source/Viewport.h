@@ -104,6 +104,11 @@ public:
 	ID3D11PixelShader *m_PixelShader;
 };
 
+struct GridVertex {
+    DirectX::SimpleMath::Vector3 pos;
+    DirectX::SimpleMath::Vector2 uv;
+};
+
 class EditorViewport : public ImwWindow {
 	friend class ImwPlatformWindowDX11;
 public:
@@ -133,6 +138,51 @@ public:
 
 			m_BatchLayout = create_input_layout(VertexPositionColor::InputElements, VertexPositionColor::InputElementCount, bytecode, len, device);
 		}
+
+        {
+            GridVertex vertices[] = {
+                { { -16.f, 0.f, -16.f }, { -2.f, -2.f } },
+                { { -16.f, 0.f,  16.f }, { -2.f,  2.f } },
+                { {  16.f, 0.f,  16.f }, {  2.f,  2.f } },
+
+
+                { { -16.f, 0.f, -16.f }, { -2.f, -2.f } },
+                { {  16.f, 0.f,  16.f }, {  2.f,  2.f } },
+                { {  16.f, 0.f, -16.f }, {  2.f, -2.f } },
+            };
+
+            m_GridBuffer = new VertexBuffer<GridVertex>(device, BufferUsageImmutable, BufferAccessNone, 6, &vertices[0]);
+
+            ID3DBlob *blob = compile_shader(L"Resources/Shaders/GridPlane.hlsl", "VS", "vs_5_0", device);
+            DXCALL(device->CreateVertexShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, &m_GridShaderVS));
+            D3D11_INPUT_ELEMENT_DESC input_desc[] = {
+                { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,                            D3D11_INPUT_PER_VERTEX_DATA, 0 },
+                { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,    0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+            };
+            m_GridLayout = create_input_layout(input_desc, ARRAYSIZE(input_desc), blob->GetBufferPointer(), blob->GetBufferSize(), device);
+
+            blob = compile_shader(L"Resources/Shaders/GridPlane.hlsl", "PS", "ps_5_0", device);
+            DXCALL(device->CreatePixelShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, &m_GridShaderPS));
+
+            DXCALL(CreateWICTextureFromFile(device, L"Resources/Textures/Grid.png", nullptr, &m_GridTexture));
+
+            D3D11_SAMPLER_DESC desc = {};
+            desc.AddressU = D3D11_TEXTURE_ADDRESS_MIRROR;
+            desc.AddressV = D3D11_TEXTURE_ADDRESS_MIRROR;
+            desc.AddressW = D3D11_TEXTURE_ADDRESS_MIRROR;
+            desc.BorderColor[0] = 1;
+            desc.BorderColor[1] = 1;
+            desc.BorderColor[2] = 1;
+            desc.BorderColor[3] = 1;
+            desc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+            desc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR;
+            desc.MaxAnisotropy = 0;
+            desc.MinLOD = 0;
+            desc.MaxLOD = D3D11_FLOAT32_MAX;
+            desc.MipLODBias = 0;
+
+            DXCALL(device->CreateSamplerState(&desc, &m_GridSampler));
+        }
 
 		{
 			auto display = ImGui::GetIO().DisplaySize;
@@ -302,7 +352,7 @@ public:
 
 		m_Batch->Begin();
 
-		DX::DrawGrid(m_Batch, { 5, 0, 0 }, { 0, 0, 5 }, { 0, 0, 0 }, 10, 10, Colors::SlateGray, Colors::MediumAquamarine);
+		//DX::DrawGrid(m_Batch, { 5, 0, 0 }, { 0, 0, 5 }, { 0, 0, 0 }, 10, 10, Colors::SlateGray, Colors::MediumAquamarine);
 
 		BoundingBox box;
 		box.Center = { 0, 0, 0 };
@@ -342,10 +392,33 @@ public:
 		}
 
 		cxt->ClearDepthStencilView(m_DepthDSV, D3D11_CLEAR_DEPTH, 1.f, 0);
+        cxt->OMSetDepthStencilState(m_States->DepthDefault(), 0);
+
+        cxt->OMSetRenderTargets(1, &ImwPlatformWindowDX11::s_pRTV, m_DepthDSV);
+        cxt->RSSetState(m_States->CullNone());
+        cxt->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+        cxt->IASetInputLayout(m_GridLayout);
+        cxt->VSSetShader(m_GridShaderVS, nullptr, 0);
+        cxt->PSSetShader(m_GridShaderPS, nullptr, 0);
+
+        UINT stride = sizeof(float) * 5, offset = 0;
+        cxt->IASetVertexBuffers(0, 1, *m_GridBuffer, &stride, &offset);
+        cxt->PSSetSamplers(0, 1, &m_GridSampler);
+        cxt->PSSetShaderResources(0, 1, &m_GridTexture);
+        ID3D11Buffer *psbuffers[] = {
+            *m_Camera->GetBuffer(),
+            *FXSystem->m_DirectionalLight,
+            *FXSystem->m_Lights
+        };
+        cxt->VSSetConstantBuffers(0, 1, psbuffers);
+        cxt->PSSetConstantBuffers(0, 3, psbuffers);
+        cxt->Draw(6, 0);
+
 
 		FXSystem->update(m_Camera, delta * Editor::Speed * (Editor::Paused ? 0.f : 1.f));
 		FXSystem->render(m_Camera, m_States, m_DepthDSV, ImwPlatformWindowDX11::s_pRTV, Editor::Debug);
 		FXSystem->frame();
+
 
 		ImVec2 window_pos = ImGui::GetWindowPos() + ImVec2(10, 10);
 		ImGui::SetNextWindowPos(window_pos, ImGuiSetCond_Always);
@@ -385,6 +458,15 @@ public:
 private:
 	ID3D11Device *device;
 	ID3D11DeviceContext *cxt;
+
+    ID3D11VertexShader *m_GridShaderVS;
+    ID3D11PixelShader *m_GridShaderPS;
+
+    ID3D11ShaderResourceView *m_GridTexture;
+    ID3D11SamplerState *m_GridSampler;
+    VertexBuffer<GridVertex> *m_GridBuffer;
+
+    ID3D11InputLayout *m_GridLayout;
 
 	Camera *m_Camera;
 

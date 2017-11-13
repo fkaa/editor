@@ -23,7 +23,7 @@ ID3DBlob *compile_shader(const wchar_t *filename, const char *function, const ch
 		D3DCompileFromFile(
 			filename,
 			nullptr,
-			nullptr,
+            D3D_COMPILE_STANDARD_FILE_INCLUDE,
 			function,
 			model,
 			D3DCOMPILE_DEBUG,
