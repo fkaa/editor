@@ -217,6 +217,7 @@ struct ParticleEffect {
     float age;
     float time;
     bool loop;
+    bool anchor;
     ParticleEffectEntry m_Entries[8];
 };
 
@@ -229,6 +230,7 @@ struct BillboardParticle {
 
 struct GeometryParticle {
     XMFLOAT3 pos;
+    XMFLOAT3 anchor;
     XMFLOAT3 velocity;
     float rotvel;
     float rotprog;
@@ -236,8 +238,12 @@ struct GeometryParticle {
     GeometryParticleDefinition *def;
     float age;
     int idx;
+};
 
-    bool anchor;
+struct AnchoredParticleEffect {
+    ParticleEffect *fx;
+    XMFLOAT3 pos;
+    std::vector<GeometryParticle> children;
 };
 
 struct GeometryParticleInstance {

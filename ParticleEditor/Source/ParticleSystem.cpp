@@ -82,6 +82,51 @@ ParticleSystem::~ParticleSystem()
     delete m_BillboardBuffer;
 }
 
+void ParticleSystem::ProcessAnchoredFX(AnchoredParticleEffect * afx, SimpleMath::Matrix model, float dt)
+{
+    afx->pos = SimpleMath::Vector3::Transform({}, model);
+    auto &fx = afx->fx;
+    for (int i = 0; i < fx->m_Count; i++) {
+        auto &entry = fx->m_Entries[i];
+
+        fx->age += dt;
+
+        if (fx->age < entry.start || fx->age > entry.start + entry.time)
+            continue;
+
+        switch (entry.type) {
+            case ParticleType::Geometry: {
+                auto def = *entry.geometry;
+
+                auto factor = (fx->age - entry.start) / entry.time;
+                auto ease_spawn = GetEaseFunc(entry.m_SpawnEasing);
+                auto spawn = entry.m_Loop ? entry.m_SpawnStart : ease_spawn(entry.m_SpawnStart, entry.m_SpawnEnd, factor);
+
+                for (entry.m_SpawnedParticles += spawn * dt; entry.m_SpawnedParticles >= 1.f; entry.m_SpawnedParticles -= 1.f) {
+                    GeometryParticle p = {};
+                    p.pos =entry.m_StartPosition.GetPosition();
+                    p.velocity = entry.m_StartVelocity.GetVelocity();
+                    p.rot = {
+                        RandomFloat(entry.m_RotLimitMin, entry.m_RotLimitMax),
+                        RandomFloat(entry.m_RotLimitMin, entry.m_RotLimitMax),
+                        RandomFloat(entry.m_RotLimitMin, entry.m_RotLimitMax)
+                    };
+                    p.rotvel = RandomFloat(entry.m_RotSpeedMin, entry.m_RotSpeedMax);
+                    p.rotprog = RandomFloat(-180, 180);
+                    p.def = entry.geometry;
+                    p.idx = (int)(def.m_Material - Editor::TrailMaterials);
+
+                    afx->children.push_back(p);
+                }
+            } break;
+            default:
+                break;
+        }
+    }
+
+    m_AnchoredEffects.push_back(afx);
+}
+
 void ParticleSystem::ProcessFX(ParticleEffect *fx, SimpleMath::Matrix model, float dt)
 {
     for (int i = 0; i < fx->m_Count; i++) {
@@ -116,6 +161,7 @@ void ParticleSystem::ProcessFX(ParticleEffect *fx, SimpleMath::Matrix model, flo
                 for (entry.m_SpawnedParticles += spawn * dt; entry.m_SpawnedParticles >= 1.f; entry.m_SpawnedParticles -= 1.f) {
                     GeometryParticle p = {};
                     p.pos = SimpleMath::Vector3::Transform(entry.m_StartPosition.GetPosition(), model);
+                    p.anchor = SimpleMath::Vector3::Transform({}, model);
                     p.velocity = entry.m_StartVelocity.GetVelocity();
                     p.rot = {
                         RandomFloat(entry.m_RotLimitMin, entry.m_RotLimitMax),
@@ -185,10 +231,67 @@ ParticleEffect ParticleSystem::GetFX(std::string name)
     return *result;
 }
 
+GeometryParticleInstance *ParticleSystem::UpdateParticles(XMVECTOR anchor, std::vector<GeometryParticle> &particles, float dt, GeometryParticleInstance *output, GeometryParticleInstance *max)
+{
+    auto it = particles.begin();
+    while (it != particles.end() && output < max) {
+        auto &particle = *it;
+        auto def = *particle.def;
+
+        if (particle.age > def.lifetime) {
+            it = particles.erase(it);
+            continue;
+        }
+
+        auto factor = particle.age / def.lifetime;
+
+        auto ease_color = GetEaseFuncV(def.m_ColorEasing);
+        auto ease_deform = GetEaseFunc(def.m_DeformEasing);
+        auto ease_size = GetEaseFunc(def.m_SizeEasing);
+
+        auto scale = ease_size(def.m_SizeStart, def.m_SizeEnd, factor);
+
+        output->m_Model = XMMatrixRotationAxis(XMLoadFloat3(&particle.rot), (particle.rotprog + particle.age) * particle.rotvel)  * XMMatrixScaling(scale, scale, scale) * XMMatrixTranslationFromVector(anchor + XMLoadFloat3(&particle.pos));
+        output->m_Age = factor;
+
+        output->m_Color = ease_color(def.m_ColorStart, def.m_ColorEnd, factor);
+        output->m_Deform = ease_deform(def.m_DeformFactorStart, def.m_DeformFactorEnd, factor);
+        output->m_DeformSpeed = def.m_DeformSpeed;
+        output->m_NoiseScale = def.m_NoiseScale;
+        output->m_NoiseSpeed = def.m_NoiseSpeed;
+
+        particle.age += dt;
+        particle.rotprog += dt;
+
+        XMStoreFloat3(&particle.velocity, XMLoadFloat3(&particle.velocity) + XMVECTOR{ 0, def.m_Gravity, 0 } *dt);
+        XMStoreFloat3(&particle.pos, XMLoadFloat3(&particle.pos) + XMLoadFloat3(&particle.velocity) * dt);
+
+        auto ease_light_color = GetEaseFuncV(def.m_LightColorEasing);
+        auto ease_light_radius = GetEaseFunc(def.m_LightRadiusEasing);
+
+        auto radius = ease_light_radius(def.m_LightRadiusStart, def.m_LightRadiusEnd, factor);
+        if (radius != 0.f && m_ParticleLights.LightCount < 128) {
+            auto light_color = ease_light_color(def.m_LightColorStart, def.m_LightColorEnd, factor);
+
+            Light light;
+            light.position = particle.pos;
+            XMStoreFloat3(&light.position, anchor + XMLoadFloat3(&particle.pos));
+            light.range = radius;
+            XMStoreFloat3(&light.color, light_color);
+            light.intensity = XMVectorGetW(light_color);
+
+            m_ParticleLights.Lights[m_ParticleLights.LightCount++] = light;
+        }
+
+        it++;
+        output++;
+    }
+
+    return output;
+}
+
 void ParticleSystem::update(Camera *cam, float dt)
 {
-    //for (auto &effect : m_ParticleEffects) 
-
     {
         BillboardParticle *ptr = m_BillboardBuffer->Map(cxt);
         for (auto particle : m_BillboardParticles) {
@@ -199,62 +302,10 @@ void ParticleSystem::update(Camera *cam, float dt)
 
     {
         GeometryParticleInstance *ptr = m_GeometryInstanceBuffer->Map(cxt);
-
-
-        auto it = m_GeometryParticles.begin();
-        int i = 0;
-        while (it != m_GeometryParticles.end() && i < 256) {
-            auto &particle = *it;
-            auto def = *particle.def;
-
-            if (particle.age > def.lifetime) {
-                it = m_GeometryParticles.erase(it);
-                continue;
-            }
-
-            auto factor = particle.age / def.lifetime;
-
-            auto ease_color = GetEaseFuncV(def.m_ColorEasing);
-            auto ease_deform = GetEaseFunc(def.m_DeformEasing);
-            auto ease_size = GetEaseFunc(def.m_SizeEasing);
-
-            auto scale = ease_size(def.m_SizeStart, def.m_SizeEnd, factor);
-
-            ptr->m_Model = XMMatrixRotationAxis(XMLoadFloat3(&particle.rot), (particle.rotprog + particle.age) * particle.rotvel)  * XMMatrixScaling(scale, scale, scale) * XMMatrixTranslationFromVector(XMLoadFloat3(&particle.pos));
-            ptr->m_Age = factor;
-            
-            ptr->m_Color = ease_color(def.m_ColorStart, def.m_ColorEnd, factor);
-            ptr->m_Deform = ease_deform(def.m_DeformFactorStart, def.m_DeformFactorEnd, factor);
-            ptr->m_DeformSpeed = def.m_DeformSpeed;
-            ptr->m_NoiseScale = def.m_NoiseScale;
-            ptr->m_NoiseSpeed = def.m_NoiseSpeed;
-
-            particle.age += dt;
-            particle.rotprog += dt;
-
-            XMStoreFloat3(&particle.velocity, XMLoadFloat3(&particle.velocity) + XMVECTOR {0, def.m_Gravity, 0 } * dt);
-            XMStoreFloat3(&particle.pos, XMLoadFloat3(&particle.pos) + XMLoadFloat3(&particle.velocity) * dt);
-
-            auto ease_light_color = GetEaseFuncV(def.m_LightColorEasing);
-            auto ease_light_radius = GetEaseFunc(def.m_LightRadiusEasing);
-
-            auto radius = ease_light_radius(def.m_LightRadiusStart, def.m_LightRadiusEnd, factor);
-            if (radius != 0.f && m_ParticleLights.LightCount < 128) {
-                auto light_color = ease_light_color(def.m_LightColorStart, def.m_LightColorEnd, factor);
-
-                Light light;
-                light.position = particle.pos;
-                light.range = radius;
-                XMStoreFloat3(&light.color, light_color);
-                light.intensity = XMVectorGetW(light_color);
-
-                m_ParticleLights.Lights[m_ParticleLights.LightCount++] = light;
-            }
-
-            it++;
-            ptr++;
-            i++;
-            // todo: remove
+        auto max = ptr + 256;
+        UpdateParticles({}, m_GeometryParticles, dt, ptr, max);
+        for (auto fx : m_AnchoredEffects) {
+            ptr = UpdateParticles(XMLoadFloat3(&fx->pos), fx->children, dt, ptr, max);
         }
         m_GeometryInstanceBuffer->Unmap(cxt);
     }
@@ -316,7 +367,7 @@ void ParticleSystem::frame()
 {
     m_ParticleLights.LightCount = 0;
     m_BillboardParticles.clear();
-    //m_GeometryParticles.clear();
+    m_AnchoredEffects.clear();
 }
 
 void ParticleSystem::ReadSphereModel()
@@ -371,8 +422,6 @@ void ParticleSystem::ReadSphereModel()
         { "NOISESPEED",  0, DXGI_FORMAT_R32_FLOAT,          1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
     };
     m_DefaultGeometryLayout = create_input_layout(input_desc, ARRAYSIZE(input_desc), blob->GetBufferPointer(), blob->GetBufferSize(), device);
-
-
 }
 
 void ParticleSystem::render(Camera *cam, CommonStates *states, ID3D11DepthStencilView *dst_dsv, ID3D11RenderTargetView *dst_rtv, bool debug)
@@ -433,6 +482,13 @@ void ParticleSystem::render(Camera *cam, CommonStates *states, ID3D11DepthStenci
         for (int i = 0; i < m_GeometryParticles.size(); i++) {
             cxt->PSSetShader(Editor::TrailMaterials[m_GeometryParticles[i].idx].m_PixelShader, nullptr, 0);
             cxt->DrawIndexedInstanced(m_GeometryIndices, 1, 0, 0, i);
+        }
+
+        for (auto fx : m_AnchoredEffects) {
+            for (int i = 0; i < fx->children.size(); i++) {
+                cxt->PSSetShader(Editor::TrailMaterials[fx->children[i].idx].m_PixelShader, nullptr, 0);
+                cxt->DrawIndexedInstanced(m_GeometryIndices, 1, 0, 0, i);
+            }
         }
     }
 

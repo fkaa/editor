@@ -252,15 +252,22 @@ public:
             } break;
             case Editor::AttributeType::Effect: {
                 auto &fx = Editor::EffectDefinitions[Editor::SelectedObject.index];
-                ImGui::TextColored(FX_COLORS[0], FX_ICON " %s", Editor::SelectedEffect->name);
+                ImGui::TextColored(FX_COLORS[0], FX_ICON " %s", Editor::SelectedAnchorEffect.fx->name);
                 ImGui::Separator();
 
                 ImGui::InputText("Name", fx.name, 15);
                 ImGui::DragFloat("Time", &fx.time, 0.005f, 0.f, 50.f);
+                ImGui::Checkbox("Anchor##Fx", &fx.anchor);
             } break;
             case Editor::AttributeType::GeometryEntry: {
-                auto &entry = Editor::SelectedEffect->m_Entries[Editor::SelectedObject.index];
-                ImGui::TextColored(FX_COLORS[0], FX_ICON " %s[%d] > " GEOMETRY_ICON " %s", Editor::SelectedEffect->name, Editor::SelectedObject.index, entry.geometry->name.c_str());
+                auto &fx = Editor::EffectDefinitions[Editor::SelectedObject.index];
+                ImGui::TextColored(FX_COLORS[0], FX_ICON " %s", Editor::SelectedAnchorEffect.fx->name);
+                ImGui::Separator();
+
+                ImGui::DragFloat("Time##fx", &fx.time, 0.005f, 0.f, 50.f);
+                ImGui::Checkbox("Anchor##Fx", &fx.anchor);
+                auto &entry = Editor::SelectedAnchorEffect.fx->m_Entries[Editor::SelectedObject.index];
+                ImGui::TextColored(FX_COLORS[0], FX_ICON " %s[%d] > " GEOMETRY_ICON " %s", Editor::SelectedAnchorEffect.fx->name, Editor::SelectedObject.index, entry.geometry->name.c_str());
                 ImGui::Separator();
 
                 ImGui::DragFloat("time##entry", &entry.time, 0.005f);
@@ -558,7 +565,7 @@ public:
             ImGui::SameLine(ImGui::GetWindowContentRegionWidth() - 42);
             sprintf(label, ICON_MD_PLAY_ARROW "##%s%d", fx.name, i);
             if (ImGui::Button(label)) {
-                Editor::SelectedEffect = &Editor::EffectDefinitions[i];
+                Editor::SelectedAnchorEffect.fx = &Editor::EffectDefinitions[i];
             }
             
             ImGui::SameLine();
@@ -581,7 +588,7 @@ public:
                             auto def = entry.billboard;
                             sprintf(label, "[%d] " BILLBOARD_ICON " %s", j, def->name.c_str());
                             if (ImGui::Selectable(label, selected == j)) {
-                                Editor::SelectedEffect = &Editor::EffectDefinitions[i];
+                                Editor::SelectedAnchorEffect.fx = &Editor::EffectDefinitions[i];
                                 Editor::SelectedObject = {
                                     Editor::AttributeType::Billboard,
                                     (int)(def - Editor::BillboardDefinitions)
@@ -592,7 +599,7 @@ public:
                             auto def = entry.geometry;
                             sprintf(label, "[%d] " GEOMETRY_ICON " %s##%s%d", j, def->name.c_str(), fx.name, j);
                             if (ImGui::Selectable(label, selected == j)) {
-                                Editor::SelectedEffect = &Editor::EffectDefinitions[i];
+                                Editor::SelectedAnchorEffect.fx = &Editor::EffectDefinitions[i];
                                 Editor::SelectedObject = {
                                     Editor::AttributeType::GeometryEntry,
                                     j
@@ -603,7 +610,7 @@ public:
                             auto def = entry.trail.def;
                             sprintf(label, "[%d] " TRAIL_ICON " %s", j, def->name.c_str());
                             if (ImGui::Selectable(label, selected == j)) {
-                                Editor::SelectedEffect = &Editor::EffectDefinitions[i];
+                                Editor::SelectedAnchorEffect.fx = &Editor::EffectDefinitions[i];
                                 Editor::SelectedObject = {
                                     Editor::AttributeType::Trail,
                                     (int)(def - Editor::TrailDefinitions)
@@ -644,6 +651,7 @@ TrailParticleDefinition TrailDefinitions[MAX_BILLBOARD_PARTICLE_DEFINITIONS];
 
 std::vector<ParticleEffect> EffectDefinitions;
 
+AnchoredParticleEffect SelectedAnchorEffect;
 ParticleEffect *SelectedEffect;
 
 JsonValue EditorState;
@@ -1304,6 +1312,12 @@ void Export(const char *file)
         fwrite(&def.m_ColorEasing, sizeof(ParticleEase), 1, f);
         fwrite(&def.m_ColorStart, sizeof(SimpleMath::Vector4), 1, f);
         fwrite(&def.m_ColorEnd, sizeof(SimpleMath::Vector4), 1, f);
+        fwrite(&def.m_LightColorEasing, sizeof(ParticleEase), 1, f);
+        fwrite(&def.m_LightColorStart, sizeof(SimpleMath::Vector4), 1, f);
+        fwrite(&def.m_LightColorEnd, sizeof(SimpleMath::Vector4), 1, f);
+        fwrite(&def.m_LightRadiusEasing, sizeof(ParticleEase), 1, f);
+        fwrite(&def.m_LightRadiusStart, sizeof(float), 1, f);
+        fwrite(&def.m_LightRadiusEnd, sizeof(float), 1, f);
     }
 
     uint32_t fx_count = EffectDefinitions.size();
@@ -1328,6 +1342,7 @@ void Export(const char *file)
                 float        m_Start;
                 float        m_Time;
                 int32_t      m_Loop;
+                int32_t      m_Anchor;
                 PosBox       m_StartPosition;
                 VelocityBox  m_StartVelocity;
                 ParticleEase m_SpawnEasing;
@@ -1355,6 +1370,7 @@ void Export(const char *file)
             bentry.m_Start = entry.start;
             bentry.m_Time = entry.time;
             bentry.m_Loop = entry.m_Loop;
+            bentry.m_Anchor = entry.m_Anchor;
             bentry.m_StartPosition = entry.m_StartPosition;
             bentry.m_StartVelocity = entry.m_StartVelocity;
             bentry.m_SpawnEasing = entry.m_SpawnEasing;
