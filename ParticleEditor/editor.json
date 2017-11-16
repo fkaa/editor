@@ -10,7 +10,6 @@
         {
             "entries": [
                 {
-                    "anchor": false,
                     "name": "DefaultBillboard",
                     "rotation": {
                         "max": 0.200000002980232,
@@ -61,7 +60,6 @@
         {
             "entries": [
                 {
-                    "anchor": false,
                     "name": "FireSmokeSphere",
                     "rotation": {
                         "max": 0.100000001490116,
@@ -112,7 +110,6 @@
         {
             "entries": [
                 {
-                    "anchor": false,
                     "name": "FireExplosionSphere",
                     "rotation": {
                         "max": 0.100000001490116,
@@ -163,7 +160,6 @@
         {
             "entries": [
                 {
-                    "anchor": false,
                     "name": "IceExplosionSphere",
                     "rotation": {
                         "max": 0.100000001490116,

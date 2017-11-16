@@ -934,8 +934,6 @@ void Load()
 
             ent.start = fxentry["start"];
             ent.time = fxentry["time"];
-            bool anchor = fxentry["anchor"];
-            ent.m_Anchor = anchor;
 
             ent.m_StartPosition = GetPositionBox(fxentry, "start_position");
             ent.m_StartVelocity = GetVelocityBox(fxentry, "start_velocity");
@@ -1116,7 +1114,6 @@ void Save() {
 
             entry["start"] = pentry.start;
             entry["time"] = pentry.time;
-            entry["anchor"] = pentry.m_Anchor == 0 ? false : true;
             entry["spawn"] = {
                 { "start", pentry.m_SpawnStart },
                 { "end", pentry.m_SpawnEnd },
