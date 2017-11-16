@@ -92,7 +92,7 @@ extern TrailParticleDefinition TrailDefinitions[MAX_BILLBOARD_PARTICLE_DEFINITIO
 extern std::vector<ParticleEffect> EffectDefinitions;
 
 extern ParticleEffect *SelectedEffect;
-
+extern AnchoredParticleEffect SelectedAnchorEffect;
 BillboardParticleDefinition *GetBillboardDef(std::string name);
 GeometryParticleDefinition *GetGeometryDef(std::string name);
 TrailParticleDefinition *GetTrailDef(std::string name);

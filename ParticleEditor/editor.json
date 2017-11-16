@@ -70,8 +70,8 @@
                         "min": -1.0
                     },
                     "spawn": {
-                        "end": 4.0,
-                        "function": "linear",
+                        "end": 5.0,
+                        "function": "easeout",
                         "start": 4.0
                     },
                     "start": 0.0,
@@ -383,6 +383,28 @@
             "deform_speed": 0.275000005960464,
             "gravity": 0.0,
             "lifetime": 0.5,
+            "light": {
+                "color": {
+                    "end": [
+                        0.0700000002980232,
+                        0.0700000002980232,
+                        0.0700000002980232,
+                        1.0
+                    ],
+                    "function": "easeout",
+                    "start": [
+                        0.699999988079071,
+                        0.215000003576279,
+                        0.215000003576279,
+                        1.0
+                    ]
+                },
+                "radius": {
+                    "end": 0.0,
+                    "function": "easeout",
+                    "start": 3.0
+                }
+            },
             "material_name": "GeometryDefault",
             "name": "PoffSphere",
             "noise_scale": 0.0450000017881393,
@@ -417,6 +439,28 @@
             "deform_speed": 1.23000001907349,
             "gravity": 4.0,
             "lifetime": 0.685000061988831,
+            "light": {
+                "color": {
+                    "end": [
+                        0.0700000002980232,
+                        0.0700000002980232,
+                        0.0700000002980232,
+                        1.0
+                    ],
+                    "function": "easeout",
+                    "start": [
+                        0.699999988079071,
+                        0.215000003576279,
+                        0.215000003576279,
+                        1.0
+                    ]
+                },
+                "radius": {
+                    "end": 0.0,
+                    "function": "easeout",
+                    "start": 3.0
+                }
+            },
             "material_name": "GeometryDefault",
             "name": "SummonSphere",
             "noise_scale": 0.0450000017881393,
@@ -451,6 +495,28 @@
             "deform_speed": 0.275000005960464,
             "gravity": 0.0,
             "lifetime": 0.5,
+            "light": {
+                "color": {
+                    "end": [
+                        0.0700000002980232,
+                        0.0700000002980232,
+                        0.0700000002980232,
+                        1.0
+                    ],
+                    "function": "easeout",
+                    "start": [
+                        0.699999988079071,
+                        0.215000003576279,
+                        0.215000003576279,
+                        1.0
+                    ]
+                },
+                "radius": {
+                    "end": 0.0,
+                    "function": "easeout",
+                    "start": 3.0
+                }
+            },
             "material_name": "GeometryDefault",
             "name": "PoffSphere",
             "noise_scale": 0.0450000017881393,
@@ -485,6 +551,28 @@
             "deform_speed": 1.6800000667572,
             "gravity": 6.0,
             "lifetime": 0.605000019073486,
+            "light": {
+                "color": {
+                    "end": [
+                        0.0700000002980232,
+                        0.0700000002980232,
+                        0.0700000002980232,
+                        1.0
+                    ],
+                    "function": "easeout",
+                    "start": [
+                        0.699999988079071,
+                        0.215000003576279,
+                        0.215000003576279,
+                        1.0
+                    ]
+                },
+                "radius": {
+                    "end": 0.0,
+                    "function": "easeout",
+                    "start": 3.0
+                }
+            },
             "material_name": "GeometryDefault",
             "name": "IceSpheres",
             "noise_scale": 0.300000011920929,
@@ -505,9 +593,9 @@
                 ],
                 "function": "easeout",
                 "start": [
-                    0.699999988079071,
-                    0.215000003576279,
-                    0.215000003576279,
+                    0.701960802078247,
+                    0.215686276555061,
+                    0.215686276555061,
                     1.0
                 ]
             },
@@ -519,6 +607,28 @@
             "deform_speed": 1.72500002384186,
             "gravity": 5.0,
             "lifetime": 6.0,
+            "light": {
+                "color": {
+                    "end": [
+                        0.0705882385373116,
+                        0.0705882385373116,
+                        0.0705882385373116,
+                        0.0
+                    ],
+                    "function": "linear",
+                    "start": [
+                        0.996078431606293,
+                        0.660927295684814,
+                        0.132810443639755,
+                        0.215686276555061
+                    ]
+                },
+                "radius": {
+                    "end": 0.0,
+                    "function": "easeout",
+                    "start": 7.95500040054321
+                }
+            },
             "material_name": "GeometryFireSmoke",
             "name": "FireSmokeSphere",
             "noise_scale": 0.0450000017881393,
@@ -550,9 +660,31 @@
                 "function": "easeout",
                 "start": 0.25
             },
-            "deform_speed": 10.9500007629395,
-            "gravity": 0.0,
-            "lifetime": 3.0,
+            "deform_speed": 16.7999992370605,
+            "gravity": -0.0,
+            "lifetime": 6.0,
+            "light": {
+                "color": {
+                    "end": [
+                        1.0,
+                        0.376470565795898,
+                        0.376470565795898,
+                        0.0
+                    ],
+                    "function": "easeout",
+                    "start": [
+                        1.0,
+                        1.0,
+                        1.0,
+                        0.0
+                    ]
+                },
+                "radius": {
+                    "end": 0.0,
+                    "function": "linear",
+                    "start": 3.0
+                }
+            },
             "material_name": "GeometryFireSmoke",
             "name": "IceExplosionSphere",
             "noise_scale": 0.0450000017881393,
@@ -587,6 +719,28 @@
             "deform_speed": 16.7999992370605,
             "gravity": 5.0,
             "lifetime": 2.0,
+            "light": {
+                "color": {
+                    "end": [
+                        0.0700000002980232,
+                        0.0700000002980232,
+                        0.0700000002980232,
+                        1.0
+                    ],
+                    "function": "easeout",
+                    "start": [
+                        0.699999988079071,
+                        0.215000003576279,
+                        0.215000003576279,
+                        1.0
+                    ]
+                },
+                "radius": {
+                    "end": 0.0,
+                    "function": "easeout",
+                    "start": 3.0
+                }
+            },
             "material_name": "GeometryFireSmoke",
             "name": "FireExplosionSphere",
             "noise_scale": 0.0450000017881393,

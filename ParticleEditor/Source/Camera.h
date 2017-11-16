@@ -11,9 +11,11 @@
 using namespace DirectX;
 
 struct CameraValues {
-	XMMATRIX m_View;
-	XMMATRIX m_Proj;
-	XMVECTOR m_Pos;
+    XMMATRIX m_ViewProjection;
+    XMMATRIX m_InvProjection;
+    XMMATRIX m_View;
+    XMVECTOR m_Position;
+    XMVECTOR m_Forward;
 };
 
 class Camera
