@@ -116,7 +116,10 @@ void ParticleSystem::ProcessAnchoredFX(AnchoredParticleEffect * afx, SimpleMath:
                     p.def = entry.geometry;
                     p.idx = (int)(def.m_Material - Editor::TrailMaterials);
 
-                    afx->children.push_back(p);
+                    if (entry.m_Anchor)
+                        afx->children.push_back(p);
+                    else
+                        m_GeometryParticles.push_back(p);
                 }
             } break;
             default:

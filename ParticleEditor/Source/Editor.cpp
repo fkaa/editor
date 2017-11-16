@@ -166,7 +166,13 @@ public:
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, GEOMETRY_COLORS[1]);
         ImGui::PushStyleColor(ImGuiCol_ButtonActive,  GEOMETRY_COLORS[2]);
         if (ImGui::Button(GEOMETRY_ICON " [Sphere]")) {
+            ParticleEffectEntry entry = {};
+            entry.type = ParticleType::Geometry;
+            entry.geometry = &Editor::GeometryDefinitions[0];
 
+            if (Editor::SelectedAnchorEffect.fx) {
+                Editor::SelectedAnchorEffect.fx->m_Entries[Editor::SelectedAnchorEffect.fx->m_Count++] = entry;
+            }
         }
         if (ImGui::IsItemHovered())
             ImGui::SetTooltip("Create new Sphere Particle");
@@ -255,12 +261,12 @@ public:
                 ImGui::TextColored(FX_COLORS[0], FX_ICON " %s", Editor::SelectedAnchorEffect.fx->name);
                 ImGui::Separator();
 
-                ImGui::InputText("Name", fx.name, 15);
-                ImGui::DragFloat("Time", &fx.time, 0.005f, 0.f, 50.f);
+                ImGui::InputText("Name#fcxc", fx.name, 15);
+                ImGui::DragFloat("Time##efefex", &fx.time, 0.005f, 0.f, 50.f);
                 ImGui::Checkbox("Anchor##Fx", &fx.anchor);
             } break;
             case Editor::AttributeType::GeometryEntry: {
-                auto &fx = Editor::EffectDefinitions[Editor::SelectedObject.index];
+                auto &fx = *Editor::SelectedAnchorEffect.fx;
                 ImGui::TextColored(FX_COLORS[0], FX_ICON " %s", Editor::SelectedAnchorEffect.fx->name);
                 ImGui::Separator();
 
@@ -935,6 +941,12 @@ void Load()
             ent.start = fxentry["start"];
             ent.time = fxentry["time"];
 
+            bool anchor = false;
+            auto it = fxentry.find("anchor");
+            if (it != fxentry.end())
+                anchor = fxentry["anchor"];
+            ent.m_Anchor = anchor;
+
             ent.m_StartPosition = GetPositionBox(fxentry, "start_position");
             ent.m_StartVelocity = GetVelocityBox(fxentry, "start_velocity");
 
@@ -1114,6 +1126,8 @@ void Save() {
 
             entry["start"] = pentry.start;
             entry["time"] = pentry.time;
+            bool anchor = pentry.m_Anchor;
+            entry["anchor"] = anchor;
             entry["spawn"] = {
                 { "start", pentry.m_SpawnStart },
                 { "end", pentry.m_SpawnEnd },
