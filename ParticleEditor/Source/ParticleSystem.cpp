@@ -94,6 +94,16 @@ void ParticleSystem::ProcessAnchoredFX(AnchoredParticleEffect * afx, SimpleMath:
         if (fx->age < entry.start || fx->age > entry.start + entry.time)
             continue;
 
+        if (fx->light.m_LightRadius != 0.f) {
+            Light light;
+            light.position = SimpleMath::Vector3::Transform({}, model);
+            light.range = fx->light.m_LightRadius;
+            XMStoreFloat3(&light.color, fx->light.m_LightColor);
+            light.intensity = XMVectorGetW(fx->light.m_LightColor);
+
+            m_ParticleLights.Lights[m_ParticleLights.LightCount++] = light;
+        }
+
         switch (entry.type) {
             case ParticleType::Geometry: {
                 auto def = *entry.geometry;
@@ -139,6 +149,16 @@ void ParticleSystem::ProcessFX(ParticleEffect *fx, SimpleMath::Matrix model, flo
 
         if (fx->age < entry.start || fx->age > entry.start + entry.time)
             continue;
+
+        if (fx->light.m_LightRadius != 0.f) {
+            Light light;
+            light.position = SimpleMath::Vector3::Transform({}, model);
+            light.range = fx->light.m_LightRadius;
+            XMStoreFloat3(&light.color, fx->light.m_LightColor);
+            light.intensity = XMVectorGetW(fx->light.m_LightColor);
+
+            m_ParticleLights.Lights[m_ParticleLights.LightCount++] = light;
+        }
 
         switch (entry.type) {
             case ParticleType::Billboard:
@@ -254,7 +274,7 @@ GeometryParticleInstance *ParticleSystem::UpdateParticles(XMVECTOR anchor, std::
 
         auto scale = ease_size(def.m_SizeStart, def.m_SizeEnd, factor);
 
-        output->m_Model = XMMatrixRotationAxis(XMLoadFloat3(&particle.rot), (particle.rotprog + particle.age) * particle.rotvel)  * XMMatrixScaling(scale, scale, scale) * XMMatrixTranslationFromVector(anchor + XMLoadFloat3(&particle.pos));
+        output->m_Model = XMMatrixRotationAxis(XMVECTOR{ 0.1f }+XMLoadFloat3(&particle.rot), (particle.rotprog + particle.age) * particle.rotvel)  * XMMatrixScaling(scale, scale, scale) * XMMatrixTranslationFromVector(anchor + XMLoadFloat3(&particle.pos));
         output->m_Age = factor;
 
         output->m_Color = ease_color(def.m_ColorStart, def.m_ColorEnd, factor);

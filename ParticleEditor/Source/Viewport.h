@@ -391,6 +391,9 @@ public:
 
             if (Editor::SelectedAnchorEffect.fx->age >= Editor::SelectedAnchorEffect.fx->time) {
                 Editor::SelectedAnchorEffect.fx->age = 0;
+                for (int i = 0; i < Editor::SelectedAnchorEffect.fx->m_Count; i++) {
+                    Editor::SelectedAnchorEffect.fx->m_Entries[i].m_SpawnedParticles = 0.f;
+                }
             }
         }
 

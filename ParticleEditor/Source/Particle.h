@@ -101,6 +101,11 @@ enum class TrailParticleEnvironment {
     Line
 };
 
+struct LightParticleDefinition {
+    float m_LightRadius;
+    SimpleMath::Vector4 m_LightColor;
+};
+
 
 struct GeometryParticleDefinition {
     std::string name;
@@ -151,7 +156,7 @@ struct BillboardParticleDefinition {
 enum class ParticleType : uint32_t {
     Trail,
     Billboard,
-    Geometry
+    Geometry,
 };
 
 inline ParticleEase GetEasingFromString(std::string str)
@@ -218,6 +223,7 @@ struct ParticleEffect {
     float time;
     bool loop;
     bool anchor;
+    LightParticleDefinition light;
     ParticleEffectEntry m_Entries[8];
 };
 

@@ -264,6 +264,11 @@ public:
                 ImGui::InputText("Name#fcxc", fx.name, 15);
                 ImGui::DragFloat("Time##efefex", &fx.time, 0.005f, 0.f, 50.f);
                 ImGui::Checkbox("Anchor##Fx", &fx.anchor);
+                ImGui::Checkbox("Loop##Fx", &fx.loop);
+
+                ImGui::Text("Light");
+                ImGui::DragFloat("Radius##fxradi", &fx.light.m_LightRadius, 0.005f);
+                ImGui::ColorEdit4("Color##fxlighty", (float*)&fx.light.m_LightColor);
             } break;
             case Editor::AttributeType::GeometryEntry: {
                 auto &fx = *Editor::SelectedAnchorEffect.fx;
@@ -272,6 +277,12 @@ public:
 
                 ImGui::DragFloat("Time##fx", &fx.time, 0.005f, 0.f, 50.f);
                 ImGui::Checkbox("Anchor##Fx", &fx.anchor);
+                ImGui::Checkbox("Loop##Fx", &fx.loop);
+
+                ImGui::Text("Light");
+                ImGui::DragFloat("Radius##fxradi", &fx.light.m_LightRadius, 0.005f);
+                ImGui::ColorEdit4("Color##fxlighty", (float*)&fx.light.m_LightColor);;
+
                 auto &entry = Editor::SelectedAnchorEffect.fx->m_Entries[Editor::SelectedObject.index];
                 ImGui::TextColored(FX_COLORS[0], FX_ICON " %s[%d] > " GEOMETRY_ICON " %s", Editor::SelectedAnchorEffect.fx->name, Editor::SelectedObject.index, entry.geometry->name.c_str());
                 ImGui::Separator();
@@ -930,6 +941,12 @@ void Load()
         fx.time = entry["time"];
         fx.loop = entry["loop"];
 
+        if (entry.find("light") != entry.end()) {
+            auto light = entry["light"];
+            fx.light.m_LightRadius = light["radius"];
+            fx.light.m_LightColor = GetVector4(light["color"]);
+        }
+
         auto entries = entry["entries"];
         for (auto fxentry : entries) {
             auto type = ParticleTypeFromString(fxentry["type"]);
@@ -1157,7 +1174,11 @@ void Save() {
             {"entries", entries},
             {"name", fx.name},
             {"time", fx.time},
-            {"loop", fx.loop}
+            {"loop", fx.loop},
+            {"light", {
+                {"radius", fx.light.m_LightRadius },
+                {"color", { fx.light.m_LightColor.x, fx.light.m_LightColor.y , fx.light.m_LightColor.z , fx.light.m_LightColor.w }}
+            }}
         };
         
         j["fx"].push_back(obj);
@@ -1341,6 +1362,8 @@ void Export(const char *file)
         fwrite(&fx.m_Count, sizeof(uint32_t), 1, f);
         fwrite(&fx.time, sizeof(float), 1, f);
         fwrite(&fx.loop, sizeof(bool), 1, f);
+        fwrite(&fx.light.m_LightRadius, sizeof(fx.light.m_LightRadius), 1, f);
+        fwrite(&fx.light.m_LightColor, sizeof(fx.light.m_LightColor), 1, f);
 
         uint32_t entry_count = fx.m_Count;
 
