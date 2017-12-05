@@ -364,6 +364,7 @@ public:
 
                 int idx = def.m_Material - Editor::TrailMaterials;
                 MaterialCombo(&idx);
+                def.m_Material = &Editor::TrailMaterials[idx];
 
                 ImGui::DragFloat("lifetime", &def.lifetime);
                 ImGui::DragFloat("gravity", &def.m_Gravity);
